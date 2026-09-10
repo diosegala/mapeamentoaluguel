@@ -1,9 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
@@ -15,7 +24,10 @@ import {
   atualizarDocumento,
   listarDocumentos,
   removerDocumento,
+  sincronizarDocumento,
+  sincronizarTodos,
 } from "@/lib/conhecimento.functions";
+
 
 export const Route = createFileRoute("/_authenticated/admin_/base")({
   head: () => ({
