@@ -14,16 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      base_conhecimento: {
+        Row: {
+          ativo: boolean
+          conteudo: string | null
+          created_at: string
+          erro_sincronizacao: string | null
+          id: string
+          ordem: number
+          origem: string
+          status_sincronizacao: string
+          titulo: string
+          ultima_sincronizacao: string | null
+          updated_at: string
+          url_google_docs: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          conteudo?: string | null
+          created_at?: string
+          erro_sincronizacao?: string | null
+          id?: string
+          ordem?: number
+          origem?: string
+          status_sincronizacao?: string
+          titulo: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string
+          url_google_docs?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          conteudo?: string | null
+          created_at?: string
+          erro_sincronizacao?: string | null
+          id?: string
+          ordem?: number
+          origem?: string
+          status_sincronizacao?: string
+          titulo?: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string
+          url_google_docs?: string | null
+        }
+        Relationships: []
+      }
+      configuracoes_agente: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          criado_por: string | null
+          id: string
+          prompt_sistema: string
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          prompt_sistema: string
+          updated_at?: string
+          versao: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          prompt_sistema?: string
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: []
+      }
+      diagnosticos: {
+        Row: {
+          cidade: string
+          codigo: string
+          concluido_em: string | null
+          created_at: string
+          estado: string
+          id: string
+          iniciado_em: string | null
+          nome_imobiliaria: string
+          respostas: Json
+          secao_atual: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cidade: string
+          codigo: string
+          concluido_em?: string | null
+          created_at?: string
+          estado: string
+          id?: string
+          iniciado_em?: string | null
+          nome_imobiliaria: string
+          respostas?: Json
+          secao_atual?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string
+          codigo?: string
+          concluido_em?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          iniciado_em?: string | null
+          nome_imobiliaria?: string
+          respostas?: Json
+          secao_atual?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      perguntas_formulario: {
+        Row: {
+          ativo: boolean
+          chave: string
+          created_at: string
+          descricao: string | null
+          id: string
+          obrigatoria: boolean
+          opcoes: Json
+          ordem: number
+          permite_outro: boolean
+          secao: number
+          texto: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatoria?: boolean
+          opcoes?: Json
+          ordem?: number
+          permite_outro?: boolean
+          secao: number
+          texto: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatoria?: boolean
+          opcoes?: Json
+          ordem?: number
+          permite_outro?: boolean
+          secao?: number
+          texto?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      relatorios: {
+        Row: {
+          conteudo: string | null
+          created_at: string
+          diagnostico_id: string
+          documentos_usados: Json
+          erro: string | null
+          id: string
+          modelo: string | null
+          prompt_snapshot: string | null
+          status: string
+          tokens_entrada: number | null
+          tokens_saida: number | null
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          conteudo?: string | null
+          created_at?: string
+          diagnostico_id: string
+          documentos_usados?: Json
+          erro?: string | null
+          id?: string
+          modelo?: string | null
+          prompt_snapshot?: string | null
+          status?: string
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+          updated_at?: string
+          versao?: number
+        }
+        Update: {
+          conteudo?: string | null
+          created_at?: string
+          diagnostico_id?: string
+          documentos_usados?: Json
+          erro?: string | null
+          id?: string
+          modelo?: string | null
+          prompt_snapshot?: string | null
+          status?: string
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_diagnostico_id_fkey"
+            columns: ["diagnostico_id"]
+            isOneToOne: false
+            referencedRelation: "diagnosticos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +400,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+    },
   },
 } as const
