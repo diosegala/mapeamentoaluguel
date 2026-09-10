@@ -64,7 +64,17 @@ function Admin() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const lista = (data ?? []).filter((d) => {
+  type Linha = {
+    id: string;
+    codigo: string;
+    nome_imobiliaria: string;
+    cidade: string;
+    estado: string;
+    status: string;
+    created_at: string;
+  };
+
+  const lista = ((data ?? []) as Linha[]).filter((d) => {
     const t = busca.trim().toLowerCase();
     if (!t) return true;
     return d.codigo.toLowerCase().includes(t) || d.nome_imobiliaria.toLowerCase().includes(t);
@@ -156,7 +166,7 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {lista.map((d) => (
+                  {lista.map((d: Linha) => (
                     <tr key={d.id} className="border-b border-border last:border-0">
                       <td className="px-4 py-3 font-semibold tracking-[0.15em]">{d.codigo}</td>
                       <td className="px-4 py-3">{d.nome_imobiliaria}</td>
