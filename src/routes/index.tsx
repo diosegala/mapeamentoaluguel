@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, Users, Workflow, MonitorCog, Sparkles, BarChart3 } from "lucide-react";
 
@@ -97,8 +97,11 @@ function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-5xl px-6 py-10 text-[13px] text-foreground-subtle">
-        CUPOLA — Método de gestão para imobiliárias.
+      <footer className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-10 text-[13px] text-foreground-subtle">
+        <span>CUPOLA — Método de gestão para imobiliárias.</span>
+        <Link to="/auth" className="font-semibold underline">
+          Acesso CUPOLA
+        </Link>
       </footer>
     </main>
   );
