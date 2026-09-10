@@ -8,6 +8,7 @@ import { Trash2 } from "lucide-react";
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { criarAdmin, listarAdmins, removerAdmin } from "@/lib/usuarios.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/usuarios")({
@@ -71,6 +72,28 @@ function Usuarios() {
   });
 
   const lista = (data ?? []) as Admin[];
+
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+
+  const trocarSenhaMut = useMutation({
+    mutationFn: async () => {
+      if (novaSenha !== confirmarSenha) throw new Error("As senhas não conferem.");
+      const { error } = await supabase.auth.updateUser({
+        password: novaSenha,
+        current_password: senhaAtual,
+      } as { password: string; current_password: string });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Senha alterada com sucesso.");
+      setSenhaAtual("");
+      setNovaSenha("");
+      setConfirmarSenha("");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao alterar a senha."),
+  });
 
   return (
     <main className="min-h-screen bg-background">
