@@ -60,6 +60,15 @@ function ConfigApi() {
       }),
   });
 
+  const salvarMutation = useMutation({
+    mutationFn: () => salvarChave({ data: { chave: novaChave.trim() } }),
+    onSuccess: () => {
+      setNovaChave("");
+      toast.success("Chave salva com segurança.");
+      statusQuery.refetch();
+    },
+  });
+
   const linhas = usoQuery.data ?? [];
 
   const totais = useMemo(() => {
