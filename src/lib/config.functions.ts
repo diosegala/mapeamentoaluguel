@@ -111,7 +111,7 @@ export const atualizarPergunta = createServerFn({ method: "POST" })
     }
     const { data: atualizada, error } = await context.supabase
       .from("perguntas_formulario")
-      .update(campos)
+      .update(campos as never)
       .eq("id", id)
       .select("*")
       .single();
