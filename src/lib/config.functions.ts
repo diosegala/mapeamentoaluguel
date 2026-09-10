@@ -199,7 +199,12 @@ export const listarVersoesPrompt = createServerFn({ method: "GET" })
 export const salvarPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ prompt_sistema: z.string().trim().min(20).max(50000) }).parse(data),
+    z
+      .object({
+        prompt_sistema: z.string().trim().min(20).max(50000),
+        modelo: z.enum(MODELOS_IDS).default("claude-sonnet-4-6"),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
