@@ -229,11 +229,25 @@ export const salvarPrompt = createServerFn({ method: "POST" })
         versao: proxima,
         ativo: true,
         criado_por: context.userId,
-      })
-      .select("id, versao")
+        modelo: data.modelo,
+      } as never)
+      .select("id, versao, modelo")
       .single();
     if (error) throw new Error(error.message);
     return criada;
+  });
+
+export const definirModeloAtivo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ modelo: z.enum(MODELOS_IDS) }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("configuracoes_agente")
+      .update({ modelo: data.modelo } as never)
+      .eq("ativo", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const ativarVersaoPrompt = createServerFn({ method: "POST" })
