@@ -87,17 +87,13 @@ function AuthPage() {
             />
           </div>
           <Button type="submit" className="h-11 w-full" disabled={carregando}>
-            {carregando ? "Aguarde..." : modo === "entrar" ? "Entrar" : "Criar acesso"}
+            {carregando ? "Aguarde..." : "Entrar"}
           </Button>
         </form>
 
-        <button
-          type="button"
-          className="mt-5 text-[13px] font-semibold text-foreground-subtle underline"
-          onClick={() => setModo(modo === "entrar" ? "criar" : "entrar")}
-        >
-          {modo === "entrar" ? "Primeiro acesso? Criar senha" : "Já tenho acesso. Entrar"}
-        </button>
+        <p className="mt-5 text-[13px] text-foreground-subtle">
+          Acessos são criados pela equipe CUPOLA na aba Administradores do painel.
+        </p>
       </div>
     </main>
   );
