@@ -9,6 +9,8 @@ const itens = [
   { to: "/admin", label: "Diagnósticos" },
   { to: "/admin/perguntas", label: "Perguntas" },
   { to: "/admin/prompt", label: "Prompt da IA" },
+  { to: "/admin/base", label: "Base de conhecimento" },
+  { to: "/admin/api", label: "Chave e uso" },
 ] as const;
 
 export function AdminNav() {

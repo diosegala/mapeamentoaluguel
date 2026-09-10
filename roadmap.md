@@ -10,5 +10,6 @@
 - [ ] Formulário dinâmico ligado ao banco
 - [ ] Página de relatório (markdown)
 - [x] Painel admin: login, dashboard, editor de perguntas, editor do prompt
-- [ ] Painel admin: base de conhecimento (Google Docs)
+- [x] Painel admin: base de conhecimento (links, sem limite)
+- [x] Painel admin: chave da API + dashboard de uso (tokens/custo, filtros)
 - [ ] Teste ponta a ponta
