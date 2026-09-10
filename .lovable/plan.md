@@ -19,7 +19,7 @@ Webapp onde a imobiliária entra com um código, responde um questionário guiad
 
 ## Detalhes técnicos
 
-- **Backend**: Lovable Cloud (banco Postgres, autenticação do admin, código de servidor). Tabelas conforme o PRD: `diagnosticos`, `relatorios`, `base_conhecimento`, `configuracoes_agente`, `perguntas_formulario`, além de `user_roles` (papel `admin`) para o controle de acesso.
+- **Backend**: seu próprio projeto Supabase, conectado ao app (banco Postgres, autenticação do admin, código de servidor). Tabelas conforme o PRD: `diagnosticos`, `relatorios`, `base_conhecimento`, `configuracoes_agente`, `perguntas_formulario`, além de `user_roles` (papel `admin`) para o controle de acesso.
 - **Segurança de dados**: acesso público restrito por código — leitura/gravação do próprio diagnóstico apenas via funções de servidor que validam o código; nenhuma listagem pública de diagnósticos. Painel admin exige sessão autenticada com papel `admin`. Toda tabela recebe RLS e GRANTs.
 - **Geração do relatório**: função de servidor que monta prompt de sistema (prompt ativo + regras fixas de formato + base de conhecimento concatenada por ordem) e mensagem do usuário com dados da imobiliária e respostas rotuladas (usando o texto salvo da pergunta, ou a chave como fallback). Chamada à API Anthropic com `claude-sonnet-4-6`, em streaming no servidor. Grava `relatorios` com snapshot do prompt, ids dos documentos usados, tokens e status; erros ficam registrados e marcam `erro_geracao`. Truncamento defensivo em ~18.000 caracteres.
 - **Chave da Anthropic**: será solicitada em formulário seguro (`ANTHROPIC_API_KEY`) e usada somente no servidor.
