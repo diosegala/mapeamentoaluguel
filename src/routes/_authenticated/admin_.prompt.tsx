@@ -65,12 +65,22 @@ function PromptAgente() {
   useEffect(() => {
     if (!carregado && ativa) {
       setTexto(ativa.prompt_sistema);
+      setModelo(ativa.modelo ?? "claude-sonnet-4-6");
       setCarregado(true);
     }
   }, [ativa, carregado]);
 
+  const modeloMut = useMutation({
+    mutationFn: (novo: string) => definirModelo({ data: { modelo: novo } }),
+    onSuccess: () => {
+      toast.success("Modelo atualizado.");
+      queryClient.invalidateQueries({ queryKey: ["prompt-versoes"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao trocar o modelo."),
+  });
+
   const salvarMut = useMutation({
-    mutationFn: () => salvar({ data: { prompt_sistema: texto } }),
+    mutationFn: () => salvar({ data: { prompt_sistema: texto, modelo } }),
     onSuccess: (nova) => {
       toast.success(`Versão ${nova.versao} salva e ativada.`);
       queryClient.invalidateQueries({ queryKey: ["prompt-versoes"] });
