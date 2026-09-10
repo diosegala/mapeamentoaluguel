@@ -1,0 +1,1 @@
+ALTER TABLE public.configuracoes_agente ADD COLUMN IF NOT EXISTS modelo text NOT NULL DEFAULT 'claude-sonnet-4-6';
