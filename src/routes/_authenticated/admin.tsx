@@ -1,13 +1,13 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, LogOut } from "lucide-react";
+import { Copy } from "lucide-react";
 
+import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { criarDiagnostico, listarDiagnosticos } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -29,7 +29,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function Admin() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const listar = useServerFn(listarDiagnosticos);
   const criar = useServerFn(criarDiagnostico);
@@ -57,12 +56,6 @@ function Admin() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar."),
   });
 
-  async function sair() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
 
   type Linha = {
     id: string;
@@ -82,16 +75,7 @@ function Admin() {
 
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-[15px] font-bold text-foreground">
-            CUPOLA · Painel
-          </Link>
-          <Button variant="ghost" onClick={sair} className="gap-2">
-            <LogOut className="h-4 w-4" /> Sair
-          </Button>
-        </div>
-      </header>
+      <AdminNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         <section className="rounded-[10px] border border-border bg-card p-6">
