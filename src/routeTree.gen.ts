@@ -15,6 +15,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as FormularioCodigoRouteImport } from './routes/formulario.$codigo'
 import { Route as RelatorioCodigoRouteImport } from './routes/relatorio.$codigo'
+import { Route as AuthenticatedAdminApiRouteImport } from './routes/_authenticated/admin_.api'
+import { Route as AuthenticatedAdminBaseRouteImport } from './routes/_authenticated/admin_.base'
 import { Route as AuthenticatedAdminPerguntasRouteImport } from './routes/_authenticated/admin_.perguntas'
 import { Route as AuthenticatedAdminPromptRouteImport } from './routes/_authenticated/admin_.prompt'
 
@@ -47,6 +49,16 @@ const RelatorioCodigoRoute = RelatorioCodigoRouteImport.update({
   path: '/relatorio/$codigo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminApiRoute = AuthenticatedAdminApiRouteImport.update({
+  id: '/admin_/api',
+  path: '/admin/api',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminBaseRoute = AuthenticatedAdminBaseRouteImport.update({
+  id: '/admin_/base',
+  path: '/admin/base',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminPerguntasRoute =
   AuthenticatedAdminPerguntasRouteImport.update({
     id: '/admin_/perguntas',
@@ -66,6 +78,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
+  '/admin/api': typeof AuthenticatedAdminApiRoute
+  '/admin/base': typeof AuthenticatedAdminBaseRoute
   '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/admin/prompt': typeof AuthenticatedAdminPromptRoute
 }
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
+  '/admin/api': typeof AuthenticatedAdminApiRoute
+  '/admin/base': typeof AuthenticatedAdminBaseRoute
   '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/admin/prompt': typeof AuthenticatedAdminPromptRoute
 }
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
+  '/_authenticated/admin_/api': typeof AuthenticatedAdminApiRoute
+  '/_authenticated/admin_/base': typeof AuthenticatedAdminBaseRoute
   '/_authenticated/admin_/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/_authenticated/admin_/prompt': typeof AuthenticatedAdminPromptRoute
 }
@@ -97,6 +115,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
+    | '/admin/api'
+    | '/admin/base'
     | '/admin/perguntas'
     | '/admin/prompt'
   fileRoutesByTo: FileRoutesByTo
@@ -106,6 +126,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
+    | '/admin/api'
+    | '/admin/base'
     | '/admin/perguntas'
     | '/admin/prompt'
   id:
@@ -116,6 +138,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
+    | '/_authenticated/admin_/api'
+    | '/_authenticated/admin_/base'
     | '/_authenticated/admin_/perguntas'
     | '/_authenticated/admin_/prompt'
   fileRoutesById: FileRoutesById
@@ -172,6 +196,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RelatorioCodigoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin_/api': {
+      id: '/_authenticated/admin_/api'
+      path: '/admin/api'
+      fullPath: '/admin/api'
+      preLoaderRoute: typeof AuthenticatedAdminApiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin_/base': {
+      id: '/_authenticated/admin_/base'
+      path: '/admin/base'
+      fullPath: '/admin/base'
+      preLoaderRoute: typeof AuthenticatedAdminBaseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin_/perguntas': {
       id: '/_authenticated/admin_/perguntas'
       path: '/admin/perguntas'
@@ -191,12 +229,16 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminApiRoute: typeof AuthenticatedAdminApiRoute
+  AuthenticatedAdminBaseRoute: typeof AuthenticatedAdminBaseRoute
   AuthenticatedAdminPerguntasRoute: typeof AuthenticatedAdminPerguntasRoute
   AuthenticatedAdminPromptRoute: typeof AuthenticatedAdminPromptRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminApiRoute: AuthenticatedAdminApiRoute,
+  AuthenticatedAdminBaseRoute: AuthenticatedAdminBaseRoute,
   AuthenticatedAdminPerguntasRoute: AuthenticatedAdminPerguntasRoute,
   AuthenticatedAdminPromptRoute: AuthenticatedAdminPromptRoute,
 }
