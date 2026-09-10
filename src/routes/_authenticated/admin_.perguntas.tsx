@@ -154,7 +154,9 @@ function Perguntas() {
     const alvo = indice + direcao;
     if (alvo < 0 || alvo >= daSecao.length) return;
     const nova = [...daSecao];
-    const [item] = nova.splice(indice, 1);
+    const item = nova[indice];
+    if (!item) return;
+    nova.splice(indice, 1);
     nova.splice(alvo, 0, item);
     reordenarMut.mutate(nova.map((p, i) => ({ id: p.id, ordem: i + 1 })));
   }

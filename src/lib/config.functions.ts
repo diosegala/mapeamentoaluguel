@@ -100,10 +100,12 @@ export const atualizarPergunta = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
-    const { id, ...campos } = data;
+    const { id, ...resto } = data;
+    const campos: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(resto)) if (v !== undefined) campos[k] = v;
     if (
-      (campos.tipo === "escolha_unica" || campos.tipo === "escolha_multipla") &&
-      (campos.opcoes?.length ?? 0) === 0
+      (resto.tipo === "escolha_unica" || resto.tipo === "escolha_multipla") &&
+      (resto.opcoes?.length ?? 0) === 0
     ) {
       throw new Error("Perguntas de escolha precisam de pelo menos uma opção.");
     }
