@@ -48,8 +48,10 @@ function PromptAgente() {
   const listar = useServerFn(listarVersoesPrompt);
   const salvar = useServerFn(salvarPrompt);
   const ativar = useServerFn(ativarVersaoPrompt);
+  const definirModelo = useServerFn(definirModeloAtivo);
 
   const [texto, setTexto] = useState("");
+  const [modelo, setModelo] = useState<string>("claude-sonnet-4-6");
   const [carregado, setCarregado] = useState(false);
 
   const { data, isLoading, error } = useQuery({
