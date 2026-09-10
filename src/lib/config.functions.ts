@@ -24,13 +24,13 @@ function chaveDe(texto: string) {
     .slice(0, 50);
 }
 
-const opcaoSchema = z.object({ valor: z.string().trim().min(1).max(200) });
+const opcaoSchema = z.string().trim().min(1).max(200);
 
 const perguntaSchema = z.object({
   secao: z.number().int().min(1).max(6),
   texto: z.string().trim().min(3).max(500),
   descricao: z.string().trim().max(500).optional().nullable(),
-  tipo: z.enum(["texto_curto", "texto_longo", "escolha_unica", "escolha_multipla", "numero", "moeda", "escala"]),
+  tipo: z.enum(["texto", "texto_longo", "escolha_unica", "escolha_multipla", "numero", "moeda"]),
   opcoes: z.array(opcaoSchema).default([]),
   permite_outro: z.boolean().default(false),
   obrigatoria: z.boolean().default(true),
