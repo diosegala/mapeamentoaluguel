@@ -8,7 +8,13 @@ import { Save } from "lucide-react";
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ativarVersaoPrompt, listarVersoesPrompt, salvarPrompt } from "@/lib/config.functions";
+import {
+  MODELOS_ANTHROPIC,
+  ativarVersaoPrompt,
+  definirModeloAtivo,
+  listarVersoesPrompt,
+  salvarPrompt,
+} from "@/lib/config.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/prompt")({
   head: () => ({
