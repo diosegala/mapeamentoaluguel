@@ -116,6 +116,44 @@ function PromptAgente() {
           </p>
         ) : (
           <>
+            <section className="mt-6 rounded-[10px] border border-border bg-card p-6">
+              <h2 className="text-[15px] font-bold text-foreground">
+                Modelo usado para gerar o diagnóstico
+              </h2>
+              <p className="mt-1 text-[13px] text-foreground-muted">
+                Escolha qual modelo da Anthropic escreverá os relatórios. A troca vale
+                imediatamente para os próximos diagnósticos.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {MODELOS_ANTHROPIC.map((m) => {
+                  const escolhido = modelo === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      aria-pressed={escolhido}
+                      disabled={modeloMut.isPending}
+                      onClick={() => {
+                        setModelo(m.id);
+                        modeloMut.mutate(m.id);
+                      }}
+                      className={
+                        escolhido
+                          ? "rounded-[10px] border border-primary bg-primary/10 p-4 text-left"
+                          : "rounded-[10px] border border-border bg-background p-4 text-left hover:bg-card-hover"
+                      }
+                    >
+                      <p className="text-sm font-semibold text-foreground">
+                        {m.nome}
+                        {escolhido ? " · em uso" : ""}
+                      </p>
+                      <p className="mt-1 text-[13px] text-foreground-subtle">{m.descricao}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
             <div className="mt-6 rounded-[10px] border border-border bg-card p-6">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-semibold text-foreground-muted">
