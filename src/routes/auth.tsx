@@ -53,9 +53,7 @@ function AuthPage() {
         </Link>
         <h1 className="mt-4 text-2xl font-bold text-foreground">Painel CUPOLA</h1>
         <p className="mt-2 text-sm text-foreground-muted">
-          {modo === "entrar"
-            ? "Entre com seu e-mail corporativo para gerenciar os diagnósticos."
-            : "Crie sua senha de acesso ao painel."}
+          Entre com seu e-mail corporativo para gerenciar os diagnósticos.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={enviar}>
