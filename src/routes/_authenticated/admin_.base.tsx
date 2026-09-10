@@ -54,9 +54,25 @@ type Documento = {
   ativo: boolean;
   ordem: number;
   status_sincronizacao: string;
+  erro_sincronizacao: string | null;
   ultima_sincronizacao: string | null;
   created_at: string;
+  resumo_ia: string | null;
+  insights: unknown;
+  temas: unknown;
+  caracteres: number | null;
+  trecho: string | null;
+  analisado_em: string | null;
 };
+
+function lista(valor: unknown): string[] {
+  return Array.isArray(valor) ? valor.map((v) => String(v)) : [];
+}
+
+function dataCurta(iso: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
 
 function BaseConhecimento() {
   const queryClient = useQueryClient();
@@ -64,16 +80,24 @@ function BaseConhecimento() {
   const adicionar = useServerFn(adicionarDocumentos);
   const atualizar = useServerFn(atualizarDocumento);
   const remover = useServerFn(removerDocumento);
+  const sincronizar = useServerFn(sincronizarDocumento);
+  const sincronizarTudo = useServerFn(sincronizarTodos);
 
   const [titulo, setTitulo] = useState("");
   const [links, setLinks] = useState("");
+  const [aberto, setAberto] = useState<Record<string, boolean>>({});
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["base-conhecimento"],
     queryFn: () => listar(),
   });
 
-  const documentos = (data ?? []) as Documento[];
+  const documentos = (data ?? []) as unknown as Documento[];
+
+  const lidos = documentos.filter((d) => d.status_sincronizacao === "ok").length;
+  const comErro = documentos.filter((d) => d.status_sincronizacao === "erro").length;
+  const parciais = documentos.filter((d) => d.status_sincronizacao === "lido").length;
+  const nunca = documentos.length - lidos - comErro - parciais;
 
   function recarregar() {
     queryClient.invalidateQueries({ queryKey: ["base-conhecimento"] });
@@ -105,6 +129,26 @@ function BaseConhecimento() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao remover."),
   });
+
+  const lerMut = useMutation({
+    mutationFn: (id: string) => sincronizar({ data: { id } }),
+    onSuccess: (r) => {
+      if (r.status === "erro") toast.error(r.mensagem);
+      else toast.success(r.mensagem);
+      recarregar();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao ler o documento."),
+  });
+
+  const lerTudoMut = useMutation({
+    mutationFn: () => sincronizarTudo(),
+    onSuccess: (r) => {
+      toast.success(`${r.ok} documento(s) lido(s), ${r.falhas} com problema.`);
+      recarregar();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao ler os documentos."),
+  });
+
 
   return (
     <main className="min-h-screen bg-background">
