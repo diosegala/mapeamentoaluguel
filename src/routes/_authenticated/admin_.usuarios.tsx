@@ -8,6 +8,7 @@ import { Trash2 } from "lucide-react";
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { criarAdmin, listarAdmins, removerAdmin } from "@/lib/usuarios.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/usuarios")({
@@ -71,6 +72,28 @@ function Usuarios() {
   });
 
   const lista = (data ?? []) as Admin[];
+
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+
+  const trocarSenhaMut = useMutation({
+    mutationFn: async () => {
+      if (novaSenha !== confirmarSenha) throw new Error("As senhas não conferem.");
+      const { error } = await supabase.auth.updateUser({
+        password: novaSenha,
+        current_password: senhaAtual,
+      } as { password: string; current_password: string });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Senha alterada com sucesso.");
+      setSenhaAtual("");
+      setNovaSenha("");
+      setConfirmarSenha("");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao alterar a senha."),
+  });
 
   return (
     <main className="min-h-screen bg-background">
@@ -166,6 +189,53 @@ function Usuarios() {
               </table>
             )}
           </div>
+        </section>
+
+        <section className="mt-8 rounded-[10px] border border-border bg-card p-6">
+          <h2 className="text-lg font-bold text-foreground">Alterar minha senha</h2>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Informe a senha atual e escolha uma nova senha com pelo menos 8 caracteres.
+          </p>
+          <form
+            className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]"
+            onSubmit={(e) => {
+              e.preventDefault();
+              trocarSenhaMut.mutate();
+            }}
+          >
+            <Input
+              type="password"
+              placeholder="Senha atual"
+              autoComplete="current-password"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+              required
+              className="h-11"
+            />
+            <Input
+              type="password"
+              placeholder="Nova senha"
+              autoComplete="new-password"
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+              required
+              minLength={8}
+              className="h-11"
+            />
+            <Input
+              type="password"
+              placeholder="Repetir nova senha"
+              autoComplete="new-password"
+              value={confirmarSenha}
+              onChange={(e) => setConfirmarSenha(e.target.value)}
+              required
+              minLength={8}
+              className="h-11"
+            />
+            <Button type="submit" className="h-11 px-6" disabled={trocarSenhaMut.isPending}>
+              {trocarSenhaMut.isPending ? "Salvando..." : "Alterar senha"}
+            </Button>
+          </form>
         </section>
       </div>
     </main>
