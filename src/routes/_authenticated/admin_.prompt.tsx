@@ -40,6 +40,7 @@ type Versao = {
   versao: number;
   ativo: boolean;
   created_at: string;
+  modelo: string | null;
 };
 
 function PromptAgente() {
