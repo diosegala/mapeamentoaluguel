@@ -197,9 +197,29 @@ function BaseConhecimento() {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-lg font-bold text-foreground">
-            Links cadastrados{documentos.length ? ` (${documentos.length})` : ""}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-foreground">
+              Links cadastrados{documentos.length ? ` (${documentos.length})` : ""}
+            </h2>
+            {documentos.length > 0 ? (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => lerTudoMut.mutate()}
+                disabled={lerTudoMut.isPending}
+              >
+                <RefreshCw className={`h-4 w-4 ${lerTudoMut.isPending ? "animate-spin" : ""}`} />
+                {lerTudoMut.isPending ? "Lendo..." : "Ler todos"}
+              </Button>
+            ) : null}
+          </div>
+
+          {documentos.length > 0 ? (
+            <p className="mt-2 text-[13px] text-foreground-muted">
+              {lidos} lido(s) e analisado(s) · {parciais} lido(s) sem análise · {comErro} com
+              problema · {nunca} nunca lido(s)
+            </p>
+          ) : null}
 
           {isLoading ? (
             <p className="mt-3 text-sm text-foreground-muted">Carregando...</p>
@@ -211,65 +231,192 @@ function BaseConhecimento() {
             <p className="mt-3 text-sm text-foreground-muted">Nenhum link cadastrado ainda.</p>
           ) : (
             <div className="mt-3 space-y-2">
-              {documentos.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex flex-wrap items-center gap-3 rounded-[10px] border border-border bg-card px-4 py-3"
-                >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <Input
-                      defaultValue={d.titulo}
-                      className="h-9"
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v && v !== d.titulo) atualizarMut.mutate({ id: d.id, titulo: v });
-                      }}
-                    />
-                    <Input
-                      defaultValue={d.url_google_docs ?? ""}
-                      className="h-9 font-mono text-[12px]"
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v && v !== d.url_google_docs)
-                          atualizarMut.mutate({ id: d.id, url_google_docs: v });
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={d.ativo}
-                        onCheckedChange={(ativo) => atualizarMut.mutate({ id: d.id, ativo })}
-                      />
-                      <span className="text-[13px] text-foreground-muted">
-                        {d.ativo ? "Ativo" : "Inativo"}
-                      </span>
+              {documentos.map((d) => {
+                const temas = lista(d.temas);
+                const insights = lista(d.insights);
+                const expandido = Boolean(aberto[d.id]);
+                const lendo = lerMut.isPending && lerMut.variables === d.id;
+
+                return (
+                  <div
+                    key={d.id}
+                    className="rounded-[10px] border border-border bg-card px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <Input
+                          defaultValue={d.titulo}
+                          className="h-9"
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (v && v !== d.titulo) atualizarMut.mutate({ id: d.id, titulo: v });
+                          }}
+                        />
+                        <Input
+                          defaultValue={d.url_google_docs ?? ""}
+                          className="h-9 font-mono text-[12px]"
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (v && v !== d.url_google_docs)
+                              atualizarMut.mutate({ id: d.id, url_google_docs: v });
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => lerMut.mutate(d.id)}
+                          disabled={lendo || lerTudoMut.isPending}
+                        >
+                          <RefreshCw className={`h-4 w-4 ${lendo ? "animate-spin" : ""}`} />
+                          {lendo ? "Lendo..." : "Ler documento"}
+                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={d.ativo}
+                            onCheckedChange={(ativo) => atualizarMut.mutate({ id: d.id, ativo })}
+                          />
+                          <span className="text-[13px] text-foreground-muted">
+                            {d.ativo ? "Ativo" : "Inativo"}
+                          </span>
+                        </div>
+                        {d.url_google_docs ? (
+                          <a
+                            href={d.url_google_docs}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-foreground-muted transition-colors hover:text-foreground"
+                            aria-label="Abrir link"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        ) : null}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Remover link"
+                          onClick={() => removerMut.mutate(d.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    {d.url_google_docs ? (
-                      <a
-                        href={d.url_google_docs}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-foreground-muted transition-colors hover:text-foreground"
-                        aria-label="Abrir link"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
+                      {d.status_sincronizacao === "ok" ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                          <CheckCircle2 className="h-4 w-4" /> Lido e analisado
+                        </span>
+                      ) : d.status_sincronizacao === "lido" ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                          <CheckCircle2 className="h-4 w-4" /> Lido, sem análise
+                        </span>
+                      ) : d.status_sincronizacao === "erro" ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-destructive">
+                          <AlertTriangle className="h-4 w-4" /> Não consegui ler
+                        </span>
+                      ) : (
+                        <span className="text-foreground-muted">Nunca lido</span>
+                      )}
+                      {d.ultima_sincronizacao ? (
+                        <span className="text-foreground-muted">
+                          Última leitura: {dataCurta(d.ultima_sincronizacao)}
+                        </span>
+                      ) : null}
+                      {d.caracteres ? (
+                        <span className="text-foreground-muted">
+                          {d.caracteres.toLocaleString("pt-BR")} caracteres lidos
+                        </span>
+                      ) : null}
+                      {(d.resumo_ia || insights.length > 0 || d.trecho) && (
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 font-semibold text-foreground underline-offset-4 hover:underline"
+                          onClick={() => setAberto((a) => ({ ...a, [d.id]: !a[d.id] }))}
+                        >
+                          O que o agente entendeu
+                          {expandido ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+
+                    {d.erro_sincronizacao ? (
+                      <p className="mt-2 text-[13px] text-destructive">
+                        {d.erro_sincronizacao}
+                        {d.erro_sincronizacao.includes("chave da Anthropic") ? (
+                          <>
+                            {" "}
+                            <Link
+                              to="/admin/api"
+                              className="font-semibold underline underline-offset-4"
+                            >
+                              Configurar chave
+                            </Link>
+                          </>
+                        ) : null}
+                      </p>
                     ) : null}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Remover link"
-                      onClick={() => removerMut.mutate(d.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                    {expandido ? (
+                      <div className="mt-3 space-y-3 rounded-[10px] bg-muted/40 p-4 text-[13px]">
+                        {d.resumo_ia ? (
+                          <div>
+                            <p className="font-semibold text-foreground">Resumo</p>
+                            <p className="mt-1 text-foreground-muted">{d.resumo_ia}</p>
+                          </div>
+                        ) : null}
+                        {temas.length > 0 ? (
+                          <div>
+                            <p className="font-semibold text-foreground">Temas</p>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {temas.map((t) => (
+                                <span
+                                  key={t}
+                                  className="rounded-full border border-border px-2 py-0.5 text-foreground-muted"
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {insights.length > 0 ? (
+                          <div>
+                            <p className="font-semibold text-foreground">Insights</p>
+                            <ul className="mt-1 list-disc space-y-1 pl-5 text-foreground-muted">
+                              {insights.map((i) => (
+                                <li key={i}>{i}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {d.trecho ? (
+                          <div>
+                            <p className="font-semibold text-foreground">Início do texto lido</p>
+                            <p className="mt-1 whitespace-pre-wrap font-mono text-[12px] text-foreground-muted">
+                              {d.trecho}
+                            </p>
+                          </div>
+                        ) : null}
+                        {d.analisado_em ? (
+                          <p className="text-foreground-muted">
+                            Análise feita em {dataCurta(d.analisado_em)}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
+
       </div>
     </main>
   );
