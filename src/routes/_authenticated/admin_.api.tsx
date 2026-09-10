@@ -127,6 +127,38 @@ function ConfigApi() {
               Verificar novamente
             </Button>
           </div>
+
+          <div className="mt-5 border-t border-border pt-5">
+            <label className="text-[13px] font-semibold text-foreground-muted">
+              {chaveOk ? "Substituir a chave" : "Colar a chave da Anthropic"}
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Input
+                type="password"
+                autoComplete="off"
+                placeholder="sk-ant-..."
+                className="min-w-[260px] flex-1"
+                value={novaChave}
+                onChange={(e) => setNovaChave(e.target.value)}
+              />
+              <Button
+                onClick={() => salvarMutation.mutate()}
+                disabled={novaChave.trim().length < 20 || salvarMutation.isPending}
+              >
+                {salvarMutation.isPending ? "Salvando..." : "Salvar chave"}
+              </Button>
+            </div>
+            <p className="mt-2 text-[13px] text-foreground-subtle">
+              A chave é guardada criptografada no cofre do seu Supabase e nunca é exibida de volta.
+            </p>
+            {salvarMutation.error ? (
+              <p className="mt-2 text-[13px] text-destructive">
+                {salvarMutation.error instanceof Error
+                  ? salvarMutation.error.message
+                  : "Não foi possível salvar."}
+              </p>
+            ) : null}
+          </div>
         </section>
 
         <section className="mt-8">
