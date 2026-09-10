@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as FormularioCodigoRouteImport } from './routes/formulario.$codigo'
 import { Route as RelatorioCodigoRouteImport } from './routes/relatorio.$codigo'
+import { Route as AuthenticatedAdminPerguntasRouteImport } from './routes/_authenticated/admin_.perguntas'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +46,12 @@ const RelatorioCodigoRoute = RelatorioCodigoRouteImport.update({
   path: '/relatorio/$codigo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminPerguntasRoute =
+  AuthenticatedAdminPerguntasRouteImport.update({
+    id: '/admin_/perguntas',
+    path: '/admin/perguntas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
+  '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +67,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
+  '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,13 +77,25 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
+  '/_authenticated/admin_/perguntas': typeof AuthenticatedAdminPerguntasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/admin' | '/formulario/$codigo' | '/relatorio/$codigo'
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/formulario/$codigo'
+    | '/relatorio/$codigo'
+    | '/admin/perguntas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/formulario/$codigo' | '/relatorio/$codigo'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/formulario/$codigo'
+    | '/relatorio/$codigo'
+    | '/admin/perguntas'
   id:
     | '__root__'
     | '/'
@@ -83,6 +104,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
+    | '/_authenticated/admin_/perguntas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -137,15 +159,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RelatorioCodigoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin_/perguntas': {
+      id: '/_authenticated/admin_/perguntas'
+      path: '/admin/perguntas'
+      fullPath: '/admin/perguntas'
+      preLoaderRoute: typeof AuthenticatedAdminPerguntasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminPerguntasRoute: typeof AuthenticatedAdminPerguntasRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminPerguntasRoute: AuthenticatedAdminPerguntasRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
