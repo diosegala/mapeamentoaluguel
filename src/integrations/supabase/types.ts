@@ -264,7 +264,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ler_segredo: { Args: { p_nome: string }; Returns: string }
+      salvar_segredo: {
+        Args: { p_nome: string; p_valor: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin"

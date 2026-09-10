@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
@@ -8,7 +9,7 @@ import { AdminNav } from "@/components/cupola/admin-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { listarDiagnosticos } from "@/lib/admin.functions";
-import { listarUsoApi, statusChaveAnthropic } from "@/lib/uso.functions";
+import { listarUsoApi, salvarChaveAnthropic, statusChaveAnthropic } from "@/lib/uso.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/api")({
   head: () => ({
@@ -41,6 +42,8 @@ function ConfigApi() {
   const [ate, setAte] = useState("");
   const [cliente, setCliente] = useState("");
   const [modelo, setModelo] = useState("");
+  const [novaChave, setNovaChave] = useState("");
+  const salvarChave = useServerFn(salvarChaveAnthropic);
 
   const statusQuery = useQuery({ queryKey: ["chave-anthropic"], queryFn: () => status() });
   const clientesQuery = useQuery({ queryKey: ["admin-diagnosticos"], queryFn: () => clientes() });
@@ -55,6 +58,15 @@ function ConfigApi() {
           modelo: modelo || null,
         },
       }),
+  });
+
+  const salvarMutation = useMutation({
+    mutationFn: () => salvarChave({ data: { chave: novaChave.trim() } }),
+    onSuccess: () => {
+      setNovaChave("");
+      toast.success("Chave salva com segurança.");
+      statusQuery.refetch();
+    },
   });
 
   const linhas = usoQuery.data ?? [];
@@ -126,6 +138,38 @@ function ConfigApi() {
             <Button variant="outline" onClick={() => statusQuery.refetch()}>
               Verificar novamente
             </Button>
+          </div>
+
+          <div className="mt-5 border-t border-border pt-5">
+            <label className="text-[13px] font-semibold text-foreground-muted">
+              {chaveOk ? "Substituir a chave" : "Colar a chave da Anthropic"}
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Input
+                type="password"
+                autoComplete="off"
+                placeholder="sk-ant-..."
+                className="min-w-[260px] flex-1"
+                value={novaChave}
+                onChange={(e) => setNovaChave(e.target.value)}
+              />
+              <Button
+                onClick={() => salvarMutation.mutate()}
+                disabled={novaChave.trim().length < 20 || salvarMutation.isPending}
+              >
+                {salvarMutation.isPending ? "Salvando..." : "Salvar chave"}
+              </Button>
+            </div>
+            <p className="mt-2 text-[13px] text-foreground-subtle">
+              A chave é guardada criptografada no cofre do seu Supabase e nunca é exibida de volta.
+            </p>
+            {salvarMutation.error ? (
+              <p className="mt-2 text-[13px] text-destructive">
+                {salvarMutation.error instanceof Error
+                  ? salvarMutation.error.message
+                  : "Não foi possível salvar."}
+              </p>
+            ) : null}
           </div>
         </section>
 

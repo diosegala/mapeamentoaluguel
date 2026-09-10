@@ -29,15 +29,58 @@ export function custoDe(modelo: string | null, entrada: number, saida: number) {
   return (entrada / 1_000_000) * p.entrada + (saida / 1_000_000) * p.saida;
 }
 
+const NOME_SEGREDO = "ANTHROPIC_API_KEY";
+
 export const statusChaveAnthropic = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await garantirAdmin(context.supabase, context.userId);
-    const chave = process.env["ANTHROPIC_API_KEY"] ?? "";
+
+    let chave = process.env["ANTHROPIC_API_KEY"] ?? "";
+    let origem: "ambiente" | "cofre" | null = chave.length > 10 ? "ambiente" : null;
+
+    if (!origem) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data } = await supabaseAdmin.rpc("ler_segredo" as never, {
+        p_nome: NOME_SEGREDO,
+      } as never);
+      const guardada = (data as string | null) ?? "";
+      if (guardada.length > 10) {
+        chave = guardada;
+        origem = "cofre";
+      }
+    }
+
     return {
-      configurada: chave.length > 10,
-      final: chave ? chave.slice(-4) : null,
+      configurada: Boolean(origem),
+      origem,
+      final: origem ? chave.slice(-4) : null,
     };
+  });
+
+export const salvarChaveAnthropic = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        chave: z
+          .string()
+          .trim()
+          .min(20, "Chave muito curta.")
+          .max(400)
+          .regex(/^sk-ant-/, "A chave da Anthropic começa com sk-ant-."),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("salvar_segredo" as never, {
+      p_nome: NOME_SEGREDO,
+      p_valor: data.chave,
+    } as never);
+    if (error) throw new Error(error.message);
+    return { ok: true, final: data.chave.slice(-4) };
   });
 
 export const listarUsoApi = createServerFn({ method: "GET" })
