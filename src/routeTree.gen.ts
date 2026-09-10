@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FormularioCodigoRouteImport } from './routes/formulario.$codigo'
+import { Route as RelatorioCodigoRouteImport } from './routes/relatorio.$codigo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FormularioCodigoRoute = FormularioCodigoRouteImport.update({
+  id: '/formulario/$codigo',
+  path: '/formulario/$codigo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatorioCodigoRoute = RelatorioCodigoRouteImport.update({
+  id: '/relatorio/$codigo',
+  path: '/relatorio/$codigo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/formulario/$codigo': typeof FormularioCodigoRoute
+  '/relatorio/$codigo': typeof RelatorioCodigoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/formulario/$codigo': typeof FormularioCodigoRoute
+  '/relatorio/$codigo': typeof RelatorioCodigoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/formulario/$codigo': typeof FormularioCodigoRoute
+  '/relatorio/$codigo': typeof RelatorioCodigoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/formulario/$codigo' | '/relatorio/$codigo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/formulario/$codigo' | '/relatorio/$codigo'
+  id: '__root__' | '/' | '/formulario/$codigo' | '/relatorio/$codigo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FormularioCodigoRoute: typeof FormularioCodigoRoute
+  RelatorioCodigoRoute: typeof RelatorioCodigoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/formulario/$codigo': {
+      id: '/formulario/$codigo'
+      path: '/formulario/$codigo'
+      fullPath: '/formulario/$codigo'
+      preLoaderRoute: typeof FormularioCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorio/$codigo': {
+      id: '/relatorio/$codigo'
+      path: '/relatorio/$codigo'
+      fullPath: '/relatorio/$codigo'
+      preLoaderRoute: typeof RelatorioCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FormularioCodigoRoute: FormularioCodigoRoute,
+  RelatorioCodigoRoute: RelatorioCodigoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
