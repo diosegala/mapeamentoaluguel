@@ -16,43 +16,61 @@ export type Database = {
     Tables: {
       base_conhecimento: {
         Row: {
+          analisado_em: string | null
           ativo: boolean
+          caracteres: number | null
           conteudo: string | null
           created_at: string
           erro_sincronizacao: string | null
           id: string
+          insights: Json
           ordem: number
           origem: string
+          resumo_ia: string | null
           status_sincronizacao: string
+          temas: Json
           titulo: string
+          trecho: string | null
           ultima_sincronizacao: string | null
           updated_at: string
           url_google_docs: string | null
         }
         Insert: {
+          analisado_em?: string | null
           ativo?: boolean
+          caracteres?: number | null
           conteudo?: string | null
           created_at?: string
           erro_sincronizacao?: string | null
           id?: string
+          insights?: Json
           ordem?: number
           origem?: string
+          resumo_ia?: string | null
           status_sincronizacao?: string
+          temas?: Json
           titulo: string
+          trecho?: string | null
           ultima_sincronizacao?: string | null
           updated_at?: string
           url_google_docs?: string | null
         }
         Update: {
+          analisado_em?: string | null
           ativo?: boolean
+          caracteres?: number | null
           conteudo?: string | null
           created_at?: string
           erro_sincronizacao?: string | null
           id?: string
+          insights?: Json
           ordem?: number
           origem?: string
+          resumo_ia?: string | null
           status_sincronizacao?: string
+          temas?: Json
           titulo?: string
+          trecho?: string | null
           ultima_sincronizacao?: string | null
           updated_at?: string
           url_google_docs?: string | null
