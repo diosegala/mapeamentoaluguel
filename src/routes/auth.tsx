@@ -27,7 +27,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [modo, setModo] = useState<"entrar" | "criar">("entrar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -36,20 +35,9 @@ function AuthPage() {
     event.preventDefault();
     setCarregando(true);
     try {
-      if (modo === "entrar") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-        if (error) throw error;
-        navigate({ to: "/admin" });
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password: senha,
-          options: { emailRedirectTo: window.location.origin + "/admin" },
-        });
-        if (error) throw error;
-        if (data.session) navigate({ to: "/admin" });
-        else toast.success("Conta criada. Confirme o e-mail para entrar.");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+      navigate({ to: "/admin" });
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível continuar.");
     } finally {
