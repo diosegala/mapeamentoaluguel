@@ -190,6 +190,53 @@ function Usuarios() {
             )}
           </div>
         </section>
+
+        <section className="mt-8 rounded-[10px] border border-border bg-card p-6">
+          <h2 className="text-lg font-bold text-foreground">Alterar minha senha</h2>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Informe a senha atual e escolha uma nova senha com pelo menos 8 caracteres.
+          </p>
+          <form
+            className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]"
+            onSubmit={(e) => {
+              e.preventDefault();
+              trocarSenhaMut.mutate();
+            }}
+          >
+            <Input
+              type="password"
+              placeholder="Senha atual"
+              autoComplete="current-password"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+              required
+              className="h-11"
+            />
+            <Input
+              type="password"
+              placeholder="Nova senha"
+              autoComplete="new-password"
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+              required
+              minLength={8}
+              className="h-11"
+            />
+            <Input
+              type="password"
+              placeholder="Repetir nova senha"
+              autoComplete="new-password"
+              value={confirmarSenha}
+              onChange={(e) => setConfirmarSenha(e.target.value)}
+              required
+              minLength={8}
+              className="h-11"
+            />
+            <Button type="submit" className="h-11 px-6" disabled={trocarSenhaMut.isPending}>
+              {trocarSenhaMut.isPending ? "Salvando..." : "Alterar senha"}
+            </Button>
+          </form>
+        </section>
       </div>
     </main>
   );
