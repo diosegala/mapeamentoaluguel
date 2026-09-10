@@ -27,7 +27,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [modo, setModo] = useState<"entrar" | "criar">("entrar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -36,20 +35,9 @@ function AuthPage() {
     event.preventDefault();
     setCarregando(true);
     try {
-      if (modo === "entrar") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-        if (error) throw error;
-        navigate({ to: "/admin" });
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password: senha,
-          options: { emailRedirectTo: window.location.origin + "/admin" },
-        });
-        if (error) throw error;
-        if (data.session) navigate({ to: "/admin" });
-        else toast.success("Conta criada. Confirme o e-mail para entrar.");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+      navigate({ to: "/admin" });
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível continuar.");
     } finally {
@@ -65,9 +53,7 @@ function AuthPage() {
         </Link>
         <h1 className="mt-4 text-2xl font-bold text-foreground">Painel CUPOLA</h1>
         <p className="mt-2 text-sm text-foreground-muted">
-          {modo === "entrar"
-            ? "Entre com seu e-mail corporativo para gerenciar os diagnósticos."
-            : "Crie sua senha de acesso ao painel."}
+          Entre com seu e-mail corporativo para gerenciar os diagnósticos.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={enviar}>
@@ -94,24 +80,20 @@ function AuthPage() {
               type="password"
               required
               minLength={6}
-              autoComplete={modo === "entrar" ? "current-password" : "new-password"}
+              autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               className="mt-2 h-11"
             />
           </div>
           <Button type="submit" className="h-11 w-full" disabled={carregando}>
-            {carregando ? "Aguarde..." : modo === "entrar" ? "Entrar" : "Criar acesso"}
+            {carregando ? "Aguarde..." : "Entrar"}
           </Button>
         </form>
 
-        <button
-          type="button"
-          className="mt-5 text-[13px] font-semibold text-foreground-subtle underline"
-          onClick={() => setModo(modo === "entrar" ? "criar" : "entrar")}
-        >
-          {modo === "entrar" ? "Primeiro acesso? Criar senha" : "Já tenho acesso. Entrar"}
-        </button>
+        <p className="mt-5 text-[13px] text-foreground-subtle">
+          Acessos são criados pela equipe CUPOLA na aba Administradores do painel.
+        </p>
       </div>
     </main>
   );
