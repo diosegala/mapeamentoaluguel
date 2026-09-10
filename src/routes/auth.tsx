@@ -80,7 +80,7 @@ function AuthPage() {
               type="password"
               required
               minLength={6}
-              autoComplete={modo === "entrar" ? "current-password" : "new-password"}
+              autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               className="mt-2 h-11"
