@@ -83,6 +83,7 @@ export type Database = {
           created_at: string
           criado_por: string | null
           id: string
+          modelo: string
           prompt_sistema: string
           updated_at: string
           versao: number
@@ -92,6 +93,7 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           id?: string
+          modelo?: string
           prompt_sistema: string
           updated_at?: string
           versao: number
@@ -101,6 +103,7 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           id?: string
+          modelo?: string
           prompt_sistema?: string
           updated_at?: string
           versao?: number

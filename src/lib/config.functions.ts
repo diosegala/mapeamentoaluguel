@@ -157,13 +157,39 @@ export const reordenarPerguntas = createServerFn({ method: "POST" })
 
 /* ---------------- Prompt do agente ---------------- */
 
+/** Modelos da Anthropic disponíveis para gerar o diagnóstico. */
+export const MODELOS_ANTHROPIC = [
+  {
+    id: "claude-sonnet-4-6",
+    nome: "Claude Sonnet 4.6",
+    descricao: "Equilíbrio recomendado entre qualidade e custo (US$ 3 / US$ 15 por milhão).",
+  },
+  {
+    id: "claude-sonnet-4-5",
+    nome: "Claude Sonnet 4.5",
+    descricao: "Geração anterior do Sonnet (US$ 3 / US$ 15 por milhão).",
+  },
+  {
+    id: "claude-opus-4-1",
+    nome: "Claude Opus 4.1",
+    descricao: "Máxima profundidade de análise, bem mais caro (US$ 15 / US$ 75 por milhão).",
+  },
+  {
+    id: "claude-haiku-4-5",
+    nome: "Claude Haiku 4.5",
+    descricao: "Mais rápido e econômico, análise mais simples (US$ 1 / US$ 5 por milhão).",
+  },
+] as const;
+
+const MODELOS_IDS = MODELOS_ANTHROPIC.map((m) => m.id) as unknown as [string, ...string[]];
+
 export const listarVersoesPrompt = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await garantirAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("configuracoes_agente")
-      .select("id, prompt_sistema, versao, ativo, created_at")
+      .select("id, prompt_sistema, versao, ativo, created_at, modelo")
       .order("versao", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
@@ -173,7 +199,12 @@ export const listarVersoesPrompt = createServerFn({ method: "GET" })
 export const salvarPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ prompt_sistema: z.string().trim().min(20).max(50000) }).parse(data),
+    z
+      .object({
+        prompt_sistema: z.string().trim().min(20).max(50000),
+        modelo: z.enum(MODELOS_IDS).default("claude-sonnet-4-6"),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
@@ -198,11 +229,25 @@ export const salvarPrompt = createServerFn({ method: "POST" })
         versao: proxima,
         ativo: true,
         criado_por: context.userId,
-      })
-      .select("id, versao")
+        modelo: data.modelo,
+      } as never)
+      .select("id, versao, modelo")
       .single();
     if (error) throw new Error(error.message);
     return criada;
+  });
+
+export const definirModeloAtivo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ modelo: z.enum(MODELOS_IDS) }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("configuracoes_agente")
+      .update({ modelo: data.modelo } as never)
+      .eq("ativo", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const ativarVersaoPrompt = createServerFn({ method: "POST" })
