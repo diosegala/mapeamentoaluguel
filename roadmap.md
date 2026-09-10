@@ -9,5 +9,6 @@
 - [ ] Funções de servidor: validar código, salvar seção, gerar relatório, sincronizar Google Docs
 - [ ] Formulário dinâmico ligado ao banco
 - [ ] Página de relatório (markdown)
-- [ ] Painel admin (login, dashboard, prompt, base de conhecimento, perguntas)
+- [x] Painel admin: login, dashboard, editor de perguntas, editor do prompt
+- [ ] Painel admin: base de conhecimento (Google Docs)
 - [ ] Teste ponta a ponta
