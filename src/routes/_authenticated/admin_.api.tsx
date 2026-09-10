@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
@@ -8,7 +9,7 @@ import { AdminNav } from "@/components/cupola/admin-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { listarDiagnosticos } from "@/lib/admin.functions";
-import { listarUsoApi, statusChaveAnthropic } from "@/lib/uso.functions";
+import { listarUsoApi, salvarChaveAnthropic, statusChaveAnthropic } from "@/lib/uso.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/api")({
   head: () => ({
@@ -41,6 +42,8 @@ function ConfigApi() {
   const [ate, setAte] = useState("");
   const [cliente, setCliente] = useState("");
   const [modelo, setModelo] = useState("");
+  const [novaChave, setNovaChave] = useState("");
+  const salvarChave = useServerFn(salvarChaveAnthropic);
 
   const statusQuery = useQuery({ queryKey: ["chave-anthropic"], queryFn: () => status() });
   const clientesQuery = useQuery({ queryKey: ["admin-diagnosticos"], queryFn: () => clientes() });
