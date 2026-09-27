@@ -1,0 +1,1 @@
+ALTER TABLE public.configuracoes_agente ALTER COLUMN modelo SET DEFAULT 'claude-sonnet-5';

@@ -51,7 +51,7 @@ function PromptAgente() {
   const definirModelo = useServerFn(definirModeloAtivo);
 
   const [texto, setTexto] = useState("");
-  const [modelo, setModelo] = useState<string>("claude-sonnet-4-6");
+  const [modelo, setModelo] = useState<string>("claude-sonnet-5");
   const [carregado, setCarregado] = useState(false);
 
   const { data, isLoading, error } = useQuery({
@@ -65,7 +65,7 @@ function PromptAgente() {
   useEffect(() => {
     if (!carregado && ativa) {
       setTexto(ativa.prompt_sistema);
-      setModelo(ativa.modelo ?? "claude-sonnet-4-6");
+      setModelo(ativa.modelo ?? "claude-sonnet-5");
       setCarregado(true);
     }
   }, [ativa, carregado]);
