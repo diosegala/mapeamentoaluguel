@@ -160,19 +160,19 @@ export const reordenarPerguntas = createServerFn({ method: "POST" })
 /** Modelos da Anthropic disponíveis para gerar o diagnóstico. */
 export const MODELOS_ANTHROPIC = [
   {
-    id: "claude-sonnet-4-6",
-    nome: "Claude Sonnet 4.6",
-    descricao: "Equilíbrio recomendado entre qualidade e custo (US$ 3 / US$ 15 por milhão).",
+    id: "claude-sonnet-5",
+    nome: "Claude Sonnet 5",
+    descricao: "Equilíbrio recomendado entre qualidade e custo (US$ 2 / US$ 10 por milhão).",
   },
   {
-    id: "claude-sonnet-4-5",
-    nome: "Claude Sonnet 4.5",
-    descricao: "Geração anterior do Sonnet (US$ 3 / US$ 15 por milhão).",
+    id: "claude-opus-5-5",
+    nome: "Claude Opus 5.5",
+    descricao: "Máxima profundidade para análises longas e exigentes (US$ 4 / US$ 20 por milhão).",
   },
   {
-    id: "claude-opus-4-1",
-    nome: "Claude Opus 4.1",
-    descricao: "Máxima profundidade de análise, bem mais caro (US$ 15 / US$ 75 por milhão).",
+    id: "claude-fable-5-1",
+    nome: "Claude Fable 5.1",
+    descricao: "Raciocínio mais avançado, porém mais lento e caro (US$ 10 / US$ 50 por milhão).",
   },
   {
     id: "claude-haiku-4-5",
@@ -202,7 +202,7 @@ export const salvarPrompt = createServerFn({ method: "POST" })
     z
       .object({
         prompt_sistema: z.string().trim().min(20).max(50000),
-        modelo: z.enum(MODELOS_IDS).default("claude-sonnet-4-6"),
+        modelo: z.enum(MODELOS_IDS).default("claude-sonnet-5"),
       })
       .parse(data),
   )

@@ -16,10 +16,14 @@ async function garantirAdmin(supabase: any, userId: string) {
 
 /** Preço em dólares por milhão de tokens. */
 export const PRECOS: Record<string, { entrada: number; saida: number }> = {
+  "claude-sonnet-5": { entrada: 2, saida: 10 },
+  "claude-opus-5-5": { entrada: 4, saida: 20 },
+  "claude-fable-5-1": { entrada: 10, saida: 50 },
+  "claude-haiku-4-5": { entrada: 1, saida: 5 },
+  // Gerações anteriores (mantidas para o histórico de relatórios antigos)
   "claude-sonnet-4-6": { entrada: 3, saida: 15 },
   "claude-sonnet-4-5": { entrada: 3, saida: 15 },
   "claude-opus-4-1": { entrada: 15, saida: 75 },
-  "claude-haiku-4-5": { entrada: 1, saida: 5 },
 };
 
 const PADRAO = { entrada: 3, saida: 15 };

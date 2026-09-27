@@ -130,7 +130,7 @@ export const removerDocumento = createServerFn({ method: "POST" })
 /* Leitura dos documentos + análise da IA                              */
 /* ------------------------------------------------------------------ */
 
-const MODELO = "claude-sonnet-4-6";
+const MODELO = "claude-sonnet-5";
 const LIMITE_ANALISE = 40_000;
 
 async function chaveAnthropic(): Promise<string | null> {
