@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-function gerarCodigo(tamanho = 6) {
+function gerarCodigo(tamanho = 8) {
   let saida = "";
   const bytes = new Uint8Array(tamanho);
   crypto.getRandomValues(bytes);
@@ -52,7 +52,7 @@ export const criarDiagnostico = createServerFn({ method: "POST" })
     await garantirAdmin(context.supabase, context.userId);
 
     for (let tentativa = 0; tentativa < 6; tentativa++) {
-      const codigo = gerarCodigo(6);
+      const codigo = gerarCodigo(8);
       const { data: criado, error } = await context.supabase
         .from("diagnosticos")
         .insert({
@@ -79,4 +79,37 @@ export const souAdmin = createServerFn({ method: "GET" })
       .eq("role", "admin")
       .maybeSingle();
     return { admin: Boolean(data) };
+  });
+
+export const detalheDiagnostico = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const [{ data: diag, error }, { data: relatorios }, { data: perguntas }] = await Promise.all([
+      context.supabase.from("diagnosticos").select("*").eq("id", data.id).single(),
+      context.supabase
+        .from("relatorios")
+        .select("id, versao, status, conteudo, erro, modelo, tokens_entrada, tokens_saida, created_at")
+        .eq("diagnostico_id", data.id)
+        .order("versao", { ascending: false }),
+      context.supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
+    ]);
+    if (error || !diag) throw new Error("Diagnóstico não encontrado.");
+    return {
+      diagnostico: diag as any,
+      relatorios: (relatorios ?? []) as any[],
+      perguntas: (perguntas ?? []) as Array<{ chave: string; texto: string; secao: number }>,
+    };
+  });
+
+export const regenerarRelatorio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { iniciarRelatorio, executarRelatorio } = await import("./gerar-relatorio.server");
+    const relId = await iniciarRelatorio(data.id);
+    await executarRelatorio(relId);
+    return { ok: true };
   });

@@ -259,6 +259,30 @@ export type Database = {
           },
         ]
       }
+      tentativas_codigo: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+          sucesso: boolean
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+          sucesso?: boolean
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          sucesso?: boolean
+          tipo?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

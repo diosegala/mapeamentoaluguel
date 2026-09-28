@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Public client access goes only through src/lib/publico.functions.ts (code-validated, IP rate-limited via tentativas_codigo, service role); no anon RLS on diagnosticos/relatorios — prevents cross-client leaks.

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -153,7 +153,15 @@ function Admin() {
                   {lista.map((d: Linha) => (
                     <tr key={d.id} className="border-b border-border last:border-0">
                       <td className="px-4 py-3 font-semibold tracking-[0.15em]">{d.codigo}</td>
-                      <td className="px-4 py-3">{d.nome_imobiliaria}</td>
+                      <td className="px-4 py-3">
+                        <Link
+                          to="/admin/diagnostico/$id"
+                          params={{ id: d.id }}
+                          className="font-medium underline-offset-4 hover:underline"
+                        >
+                          {d.nome_imobiliaria}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3">
                         {d.cidade}/{d.estado}
                       </td>
