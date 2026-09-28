@@ -20,6 +20,7 @@ import { Route as AuthenticatedAdminBaseRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminPerguntasRouteImport } from './routes/_authenticated/admin_.perguntas'
 import { Route as AuthenticatedAdminPromptRouteImport } from './routes/_authenticated/admin_.prompt'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin_.usuarios'
+import { Route as AuthenticatedAdminDiagnosticoIdRouteImport } from './routes/_authenticated/admin_.diagnostico.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -78,6 +79,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminDiagnosticoIdRoute =
+  AuthenticatedAdminDiagnosticoIdRouteImport.update({
+    id: '/admin_/diagnostico/$id',
+    path: '/admin/diagnostico/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/admin/prompt': typeof AuthenticatedAdminPromptRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin/diagnostico/$id': typeof AuthenticatedAdminDiagnosticoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/admin/prompt': typeof AuthenticatedAdminPromptRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin/diagnostico/$id': typeof AuthenticatedAdminDiagnosticoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/_authenticated/admin_/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/_authenticated/admin_/prompt': typeof AuthenticatedAdminPromptRoute
   '/_authenticated/admin_/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/_authenticated/admin_/diagnostico/$id': typeof AuthenticatedAdminDiagnosticoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/admin/perguntas'
     | '/admin/prompt'
     | '/admin/usuarios'
+    | '/admin/diagnostico/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/admin/perguntas'
     | '/admin/prompt'
     | '/admin/usuarios'
+    | '/admin/diagnostico/$id'
   id:
     | '__root__'
     | '/'
@@ -155,6 +167,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin_/perguntas'
     | '/_authenticated/admin_/prompt'
     | '/_authenticated/admin_/usuarios'
+    | '/_authenticated/admin_/diagnostico/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin_/diagnostico/$id': {
+      id: '/_authenticated/admin_/diagnostico/$id'
+      path: '/admin/diagnostico/$id'
+      fullPath: '/admin/diagnostico/$id'
+      preLoaderRoute: typeof AuthenticatedAdminDiagnosticoIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -254,6 +274,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPerguntasRoute: typeof AuthenticatedAdminPerguntasRoute
   AuthenticatedAdminPromptRoute: typeof AuthenticatedAdminPromptRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
+  AuthenticatedAdminDiagnosticoIdRoute: typeof AuthenticatedAdminDiagnosticoIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -263,6 +284,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPerguntasRoute: AuthenticatedAdminPerguntasRoute,
   AuthenticatedAdminPromptRoute: AuthenticatedAdminPromptRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
+  AuthenticatedAdminDiagnosticoIdRoute: AuthenticatedAdminDiagnosticoIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
