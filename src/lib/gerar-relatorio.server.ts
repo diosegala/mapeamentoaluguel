@@ -1,6 +1,8 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const LIMITE_BASE = 18_000;
+const MAX_TOKENS_RESPOSTA = 16_000;
+const MAX_TRECHOS = 5;
 const REGRAS_FORMATO = `
 
 REGRAS DE FORMATO (obrigatórias):
@@ -122,30 +124,60 @@ export async function executarRelatorio(relatorioId: string) {
       .update({ prompt_snapshot: sistema, documentos_usados: usados, modelo })
       .eq("id", relatorioId);
 
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": chave,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: modelo,
-        max_tokens: 8000,
-        system: sistema,
-        messages: [{ role: "user", content: usuario }],
-      }),
-    });
-    const json: any = await resp.json().catch(() => null);
-    if (!resp.ok) {
-      console.error("Anthropic erro", resp.status, json);
-      return falhar(`Falha na IA (${resp.status}): ${json?.error?.message ?? "erro desconhecido"}`);
+    const mensagens: Array<{ role: "user" | "assistant"; content: unknown }> = [
+      { role: "user", content: usuario },
+    ];
+    const partes: string[] = [];
+    let tokensEntrada = 0;
+    let tokensSaida = 0;
+    let finalizado = false;
+
+    for (let trecho = 0; trecho < MAX_TRECHOS; trecho++) {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": chave,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: modelo,
+          max_tokens: MAX_TOKENS_RESPOSTA,
+          system: sistema,
+          messages: mensagens,
+        }),
+      });
+      const json: any = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        console.error("Anthropic erro", resp.status, json);
+        await supabaseAdmin.from("relatorios").update({ tokens_entrada: tokensEntrada, tokens_saida: tokensSaida }).eq("id", relatorioId);
+        return falhar(`Falha na IA (${resp.status}): ${json?.error?.message ?? "erro desconhecido"}`);
+      }
+
+      tokensEntrada += json?.usage?.input_tokens ?? 0;
+      tokensSaida += json?.usage?.output_tokens ?? 0;
+      const blocos = Array.isArray(json?.content) ? json.content : [];
+      const textoTrecho = blocos
+        .filter((c: { type?: string }) => c.type === "text")
+        .map((c: { text?: string }) => c.text ?? "")
+        .join("");
+      partes.push(textoTrecho);
+
+      if (json?.stop_reason === "end_turn") {
+        finalizado = true;
+        break;
+      }
+      if (json?.stop_reason !== "max_tokens" || blocos.length === 0) break;
+
+      // Reenvia os blocos originais, inclusive eventuais assinaturas de pensamento,
+      // para a Anthropic continuar sem recomeçar nem duplicar o texto anterior.
+      mensagens.push({ role: "assistant", content: blocos });
+      mensagens.push({ role: "user", content: "Continue exatamente de onde parou, sem repetir o texto anterior. Termine todas as seções do relatório." });
     }
-    const texto = (json?.content ?? [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
+
+    await supabaseAdmin.from("relatorios").update({ tokens_entrada: tokensEntrada, tokens_saida: tokensSaida }).eq("id", relatorioId);
+    if (!finalizado) return falhar("A IA interrompeu o relatório antes do final. Gere uma nova versão.");
+    const texto = partes.join("").trim();
     if (!texto) return falhar("A IA não retornou conteúdo.");
 
     await supabaseAdmin
@@ -154,8 +186,8 @@ export async function executarRelatorio(relatorioId: string) {
         status: "concluido",
         conteudo: texto,
         erro: null,
-        tokens_entrada: json?.usage?.input_tokens ?? null,
-        tokens_saida: json?.usage?.output_tokens ?? null,
+         tokens_entrada: tokensEntrada,
+         tokens_saida: tokensSaida,
       })
       .eq("id", relatorioId);
     await supabaseAdmin
