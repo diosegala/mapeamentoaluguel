@@ -172,3 +172,94 @@
     color: var(--color-foreground);
   }
 }
+
+/*
+ * Versão de impressão (PDF) do relatório de diagnóstico.
+ * Inspirada no "Panorama do Corretor Imobiliário 2026": capa própria,
+ * seções numeradas, tabelas formatadas e rodapé com numeração de página.
+ */
+@page {
+  size: A4;
+  margin: 2cm 1.8cm;
+  @bottom-center {
+    content: "CUPOLA · Diagnóstico da Operação de Locação · pág. " counter(page);
+    font-size: 9px;
+    color: #959595;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #171717 !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .relatorio-pdf {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Capa */
+  .relatorio-capa {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 24cm;
+    page-break-after: always;
+    text-align: left;
+  }
+  .relatorio-capa .capa-marca {
+    display: inline-block;
+    background: #b0f907;
+    color: #0a0a0a;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    padding: 6px 16px;
+    border-radius: 40px;
+    width: fit-content;
+  }
+  .relatorio-capa h1 {
+    font-size: 34pt;
+    line-height: 1.15;
+    margin-top: 24px;
+  }
+  .relatorio-capa .capa-meta {
+    margin-top: 16px;
+    font-size: 12pt;
+    color: #565656;
+  }
+
+  /* Conteúdo: seções numeradas e tabelas */
+  .relatorio-conteudo h2 {
+    page-break-after: avoid;
+    border-bottom: 2px solid #b0f907;
+    padding-bottom: 6px;
+  }
+  .relatorio-conteudo h2,
+  .relatorio-conteudo h3 {
+    page-break-inside: avoid;
+  }
+  .relatorio-conteudo table {
+    page-break-inside: avoid;
+    border-collapse: collapse;
+  }
+  .relatorio-conteudo th {
+    background: #f5f5f5;
+  }
+  .relatorio-conteudo blockquote {
+    border-left: 4px solid #b0f907;
+    background: #f9fee7;
+    padding: 10px 14px;
+    page-break-inside: avoid;
+  }
+  .relatorio-conteudo p,
+  .relatorio-conteudo li {
+    orphans: 3;
+    widows: 3;
+  }
+}

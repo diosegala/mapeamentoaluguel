@@ -76,6 +76,9 @@ function Detalhe() {
                 >
                   Enviar por WhatsApp
                 </Button>
+                <Button variant="outline" disabled={!ultimo} onClick={() => window.open(link, "_blank")}>
+                  Baixar PDF
+                </Button>
                 <Button disabled={regen.isPending || Object.keys(respostas).length === 0} onClick={() => regen.mutate()}>
                   {regen.isPending ? "Gerando..." : "Regenerar relatório"}
                 </Button>

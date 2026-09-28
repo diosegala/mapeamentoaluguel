@@ -64,14 +64,26 @@ function Relatorio() {
 
   if (d.conteudo) {
     return (
-      <main className="min-h-screen bg-background px-6 py-12">
-        <article className="mx-auto max-w-3xl">
-          <span className="inline-flex rounded-[40px] bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground">
-            Diagnóstico CUPOLA
-          </span>
-          <h1 className="mt-4 text-[34px] leading-[40px] font-bold text-foreground">{d.nome}</h1>
-          <div className="mt-6"><AvisoIa /></div>
-          <div className="mt-8"><RelatorioMarkdown conteudo={d.conteudo} /></div>
+      <main className="min-h-screen bg-background px-6 py-12 print:p-0">
+        <article className="relatorio-pdf mx-auto max-w-3xl">
+          <div className="print-hidden mb-6 flex justify-end">
+            <Button onClick={() => window.print()}>Baixar PDF</Button>
+          </div>
+          <div className="relatorio-capa">
+            <span className="capa-marca inline-flex rounded-[40px] bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground">
+              Diagnóstico CUPOLA
+            </span>
+            <h1 className="mt-4 text-[34px] leading-[40px] font-bold text-foreground">{d.nome}</h1>
+            <p className="capa-meta mt-2 text-sm text-foreground-muted">
+              Diagnóstico da Operação de Locação · {new Date().toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+          <div className="mt-6 print:hidden"><AvisoIa /></div>
+          <div className="relatorio-conteudo mt-8"><RelatorioMarkdown conteudo={d.conteudo} /></div>
+          <p className="mt-10 hidden border-t border-border pt-4 text-xs text-foreground-subtle print:block">
+            Este relatório foi gerado por inteligência artificial a partir das respostas do questionário e é um
+            diagnóstico inicial. Ele não substitui a análise aprofundada da equipe CUPOLA.
+          </p>
         </article>
       </main>
     );

@@ -12,4 +12,5 @@
 - [x] Painel admin: login, dashboard, editor de perguntas, editor do prompt
 - [x] Painel admin: base de conhecimento (links, sem limite)
 - [x] Painel admin: chave da API + dashboard de uso (tokens/custo, filtros)
-- [ ] Teste ponta a ponta
+- [x] Versão PDF do relatório (impressão com capa, seções numeradas, rodapé)
+- [ ] Teste ponta a ponta (precisa da chave Anthropic configurada no painel)
