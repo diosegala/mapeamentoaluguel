@@ -13,7 +13,7 @@ export function AvisoIa() {
   return (
     <p className="rounded-[10px] border border-border bg-card p-4 text-sm text-foreground-muted">
       Este relatório foi gerado por inteligência artificial a partir das suas respostas e é um
-      diagnóstico inicial. Ele não substitui a análise aprofundada da equipe CUPOLA.
+      diagnóstico inicial.
     </p>
   );
 }

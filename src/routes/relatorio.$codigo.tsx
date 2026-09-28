@@ -82,7 +82,7 @@ function Relatorio() {
           <div className="relatorio-conteudo mt-8"><RelatorioMarkdown conteudo={d.conteudo} /></div>
           <p className="mt-10 hidden border-t border-border pt-4 text-xs text-foreground-subtle print:block">
             Este relatório foi gerado por inteligência artificial a partir das respostas do questionário e é um
-            diagnóstico inicial. Ele não substitui a análise aprofundada da equipe CUPOLA.
+            diagnóstico inicial.
           </p>
         </article>
       </main>
