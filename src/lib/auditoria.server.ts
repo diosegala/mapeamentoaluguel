@@ -10,8 +10,14 @@ Afirmações do relatório que contradizem as respostas, números calculados err
 ## 2. Lacunas
 Respostas relevantes ignoradas pelo relatório, seções superficiais, ou informações que faltam no questionário e limitam o diagnóstico.
 
-## 3. Recomendações sem evidência
-Recomendações ou conclusões do relatório que não têm base nas respostas (cite o trecho do relatório e explique o que faltaria para sustentá-las).
+## 3. Recomendações sem evidência e violações das regras
+Aponte, citando o trecho:
+- recomendações ou conclusões sem base nas respostas, ou sem a indicação "Com base em: ...";
+- hipóteses ou suposições ("provavelmente", "é possível que", "deve estar");
+- números que não vêm das respostas nem de cálculo direto entre elas (médias de mercado, referências externas);
+- fatos sobre o cliente tirados da base de conhecimento e não das respostas;
+- tom categórico: afirmações definitivas sobre causas, resultados futuros ou promessas de ganho;
+- ausência da seção "Limites deste diagnóstico".
 
 ## 4. Veredito
 Um parágrafo curto: o relatório pode ser enviado ao cliente como está, com ajustes, ou precisa ser regenerado.
