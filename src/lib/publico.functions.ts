@@ -82,7 +82,7 @@ export const abrirDiagnostico = createServerFn({ method: "POST" })
       nome: diag.nome_imobiliaria as string,
       status: diag.status as string,
       secao_atual: diag.secao_atual as number,
-      respostas: (diag.respostas ?? {}) as Record<string, unknown>,
+      respostas: (diag.respostas ?? {}) as Record<string, string | number | string[] | null>,
       perguntas: (perguntas ?? []) as Array<{
         chave: string;
         secao: number;
