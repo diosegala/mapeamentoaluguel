@@ -132,6 +132,9 @@ export async function executarRelatorio(relatorioId: string) {
     let tokensSaida = 0;
     let finalizado = false;
 
+    let tokensCacheCriacao = 0;
+    let tokensCacheLeitura = 0;
+
     for (let trecho = 0; trecho < MAX_TRECHOS; trecho++) {
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -139,11 +142,18 @@ export async function executarRelatorio(relatorioId: string) {
           "content-type": "application/json",
           "x-api-key": chave,
           "anthropic-version": "2023-06-01",
+          "anthropic-beta": "prompt-caching-2024-07-31",
         },
         body: JSON.stringify({
           model: modelo,
           max_tokens: MAX_TOKENS_RESPOSTA,
-          system: sistema,
+          system: [
+            {
+              type: "text",
+              text: sistema,
+              cache_control: { type: "ephemeral" },
+            },
+          ],
           messages: mensagens,
         }),
       });
@@ -155,6 +165,8 @@ export async function executarRelatorio(relatorioId: string) {
       }
 
       tokensEntrada += json?.usage?.input_tokens ?? 0;
+      tokensCacheCriacao += json?.usage?.cache_creation_input_tokens ?? 0;
+      tokensCacheLeitura += json?.usage?.cache_read_input_tokens ?? 0;
       tokensSaida += json?.usage?.output_tokens ?? 0;
       const blocos = Array.isArray(json?.content) ? json.content : [];
       const textoTrecho = blocos
@@ -175,7 +187,7 @@ export async function executarRelatorio(relatorioId: string) {
       mensagens.push({ role: "user", content: "Continue exatamente de onde parou, sem repetir o texto anterior. Termine todas as seções do relatório." });
     }
 
-    await supabaseAdmin.from("relatorios").update({ tokens_entrada: tokensEntrada, tokens_saida: tokensSaida }).eq("id", relatorioId);
+    await supabaseAdmin.from("relatorios").update({ tokens_entrada: tokensEntrada, tokens_saida: tokensSaida, tokens_cache_criacao: tokensCacheCriacao, tokens_cache_leitura: tokensCacheLeitura }).eq("id", relatorioId);
     if (!finalizado) return falhar("A IA interrompeu o relatório antes do final. Gere uma nova versão.");
     const texto = partes.join("").trim();
     if (!texto) return falhar("A IA não retornou conteúdo.");
@@ -188,6 +200,8 @@ export async function executarRelatorio(relatorioId: string) {
         erro: null,
          tokens_entrada: tokensEntrada,
          tokens_saida: tokensSaida,
+         tokens_cache_criacao: tokensCacheCriacao,
+         tokens_cache_leitura: tokensCacheLeitura,
       })
       .eq("id", relatorioId);
     await supabaseAdmin
