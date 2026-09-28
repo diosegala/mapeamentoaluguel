@@ -113,3 +113,46 @@ export const regenerarRelatorio = createServerFn({ method: "POST" })
     await executarRelatorio(relId);
     return { ok: true };
   });
+
+export const enviarRelatorioPorEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        email: z.string().trim().email("Informe um e-mail válido.").max(200),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+
+    const [{ data: diag, error }, { data: relatorio }] = await Promise.all([
+      context.supabase
+        .from("diagnosticos")
+        .select("id, codigo, nome_imobiliaria")
+        .eq("id", data.id)
+        .single(),
+      context.supabase
+        .from("relatorios")
+        .select("id")
+        .eq("diagnostico_id", data.id)
+        .eq("status", "concluido")
+        .order("versao", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (error || !diag) throw new Error("Diagnóstico não encontrado.");
+    if (!relatorio) throw new Error("Ainda não há um relatório concluído para enviar.");
+
+    const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
+    const link = `${base}/relatorio/${diag.codigo}`;
+
+    const { enviarEmail, montarEmailRelatorio } = await import("./email.server");
+    const { assunto, html } = montarEmailRelatorio({
+      nomeImobiliaria: diag.nome_imobiliaria,
+      linkRelatorio: link,
+    });
+    await enviarEmail({ para: data.email, assunto, html });
+    return { ok: true };
+  });
