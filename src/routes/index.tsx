@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Users, Workflow, MonitorCog, Sparkles, BarChart3 } from "lucide-react";
+import { ArrowRight, Users, Workflow, MonitorCog, BarChart3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,11 +26,10 @@ export const Route = createFileRoute("/")({
 });
 
 const pilares = [
-  { icon: Users, titulo: "Pessoas", texto: "Tamanho, papéis e liderança do time de locação." },
-  { icon: Workflow, titulo: "Processos", texto: "Captação, SLA de atendimento, desocupação e funil." },
-  { icon: MonitorCog, titulo: "Tecnologia", texto: "Sistema de gestão, CRM, automações e dashboards." },
-  { icon: Sparkles, titulo: "Uso de IA", texto: "Ferramentas, disseminação e barreiras na operação." },
-  { icon: BarChart3, titulo: "Indicadores", texto: "Estoque, locações, captações, leads e VGL." },
+  { icon: BarChart3, titulo: "Perfil da Imobiliária", texto: "Carteira, estoque, locações, receitas e porte da operação." },
+  { icon: Users, titulo: "Gestão Estratégica", texto: "Estratégia do negócio, gestão de pessoas, marketing e uso de IA." },
+  { icon: Workflow, titulo: "Gestão Comercial", texto: "Captação de imóveis, geração de leads e atendimento ao cliente." },
+  { icon: MonitorCog, titulo: "Gestão Administrativa e Financeira", texto: "Contratos, garantias, inadimplência, sistemas e rotinas." },
 ];
 
 function Home() {
@@ -49,9 +48,10 @@ function Home() {
           Diagnóstico da sua operação de locação
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-6 text-foreground-muted">
-          Um mapeamento estruturado de pessoas, processos, tecnologia, uso de inteligência
-          artificial e indicadores objetivos. Ao final, você recebe um relatório com a leitura da
-          CUPOLA sobre onde estão os gargalos e quais são os próximos passos.
+          Um mapeamento estruturado da sua gestão estratégica, comercial, administrativa e
+          financeira, com o uso de inteligência artificial atravessando todos os pilares. Ao final,
+          você recebe um relatório com a leitura da CUPOLA sobre onde estão os gargalos e quais são
+          os próximos passos.
         </p>
 
         <form

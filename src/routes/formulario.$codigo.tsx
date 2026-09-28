@@ -29,12 +29,10 @@ export const Route = createFileRoute("/formulario/$codigo")({
 });
 
 const NOMES_SECOES: Record<number, string> = {
-  1: "Identificação",
-  2: "Pessoas",
-  3: "Processos",
-  4: "Tecnologia",
-  5: "Uso de IA",
-  6: "Indicadores",
+  1: "Perfil da Imobiliária",
+  2: "Gestão Estratégica",
+  3: "Gestão Comercial",
+  4: "Gestão Administrativa e Financeira",
 };
 
 type Valor = string | number | string[] | null;

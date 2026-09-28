@@ -101,22 +101,36 @@ export async function executarRelatorio(relatorioId: string) {
       (base ? `\n\nBASE DE CONHECIMENTO CUPOLA:${base}` : "");
 
     const respostas = (diag.respostas ?? {}) as Record<string, unknown>;
+    const { data: secoesDb } = await (supabaseAdmin as any)
+      .from("secoes_formulario")
+      .select("numero, nome")
+      .order("numero");
+    const nomesSecoes = new Map<number, string>(
+      ((secoesDb ?? []) as Array<{ numero: number; nome: string }>).map((s) => [s.numero, s.nome]),
+    );
     const textos = new Map((perguntas ?? []).map((p) => [p.chave, p.texto]));
     const linhas: string[] = [];
     const vistos = new Set<string>();
+    let secaoAtual: number | null = null;
     for (const p of perguntas ?? []) {
       if (!(p.chave in respostas)) continue;
       vistos.add(p.chave);
+      if (p.secao !== secaoAtual) {
+        secaoAtual = p.secao;
+        linhas.push(`\n## ${nomesSecoes.get(p.secao) ?? `Seção ${p.secao}`}`);
+      }
       let v = formatarValor(respostas[p.chave]);
       const outro = respostas[`${p.chave}__outro`];
       if (outro) v += ` (Outro: ${outro})`;
       linhas.push(`- ${p.texto}: ${v}`);
     }
+    const extras: string[] = [];
     for (const [k, v] of Object.entries(respostas)) {
       if (vistos.has(k) || k.endsWith("__outro")) continue;
-      linhas.push(`- ${textos.get(k) ?? k}: ${formatarValor(v)}`);
+      extras.push(`- ${textos.get(k) ?? k}: ${formatarValor(v)}`);
     }
-    const usuario = `Imobiliária: ${diag.nome_imobiliaria}\nCidade: ${diag.cidade}/${diag.estado}\n\nRespostas do mapeamento:\n${linhas.join("\n")}\n\nEscreva o relatório de diagnóstico.`;
+    if (extras.length) linhas.push("\n## Outras respostas", ...extras);
+    const usuario = `Imobiliária: ${diag.nome_imobiliaria}\nCidade: ${diag.cidade}/${diag.estado}\n\nRespostas do mapeamento, agrupadas pelas seções do formulário:\n${linhas.join("\n")}\n\nEscreva o relatório de diagnóstico.`;
 
     const modelo = cfg.modelo || "claude-sonnet-5";
     await supabaseAdmin
