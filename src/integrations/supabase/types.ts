@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      auditorias: {
+        Row: {
+          created_at: string
+          diagnostico_id: string
+          id: string
+          modelo: string
+          relatorio_id: string | null
+          tokens_entrada: number
+          tokens_saida: number
+        }
+        Insert: {
+          created_at?: string
+          diagnostico_id: string
+          id?: string
+          modelo: string
+          relatorio_id?: string | null
+          tokens_entrada?: number
+          tokens_saida?: number
+        }
+        Update: {
+          created_at?: string
+          diagnostico_id?: string
+          id?: string
+          modelo?: string
+          relatorio_id?: string | null
+          tokens_entrada?: number
+          tokens_saida?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditorias_diagnostico_id_fkey"
+            columns: ["diagnostico_id"]
+            isOneToOne: false
+            referencedRelation: "diagnosticos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditorias_relatorio_id_fkey"
+            columns: ["relatorio_id"]
+            isOneToOne: false
+            referencedRelation: "relatorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       base_conhecimento: {
         Row: {
           analisado_em: string | null

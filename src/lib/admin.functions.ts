@@ -111,7 +111,7 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
     const [{ data: diag }, { data: rel }, { data: perguntas }] = await Promise.all([
-      context.supabase.from("diagnosticos").select("respostas, nome_imobiliaria").eq("id", data.id).single(),
+      context.supabase.from("diagnosticos").select("*").eq("id", data.id).single(),
       context.supabase
         .from("relatorios")
         .select("conteudo")
@@ -121,7 +121,8 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
       context.supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
     ]);
     if (!diag || !rel?.conteudo) throw new Error("Relatório não encontrado.");
-    const respostas = (diag.respostas ?? {}) as Record<string, unknown>;
+    const d = diag as any;
+    const respostas = (d.respostas ?? {}) as Record<string, unknown>;
     const fmt = (v: unknown) => (Array.isArray(v) ? v.join(", ") : v == null || v === "" ? "—" : String(v));
     const texto = (perguntas ?? [])
       .filter((p: any) => p.chave in respostas)
@@ -130,8 +131,19 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
         return `- ${p.texto}\n  Resposta: ${fmt(respostas[p.chave])}${outro ? ` (Outro: ${outro})` : ""}`;
       })
       .join("\n");
+    const cadastro = [
+      `- Imobiliária: ${d.nome_imobiliaria}`,
+      `- Cidade/estado: ${d.cidade ?? "—"}/${d.estado ?? "—"}`,
+      ...["nome_respondente", "email_respondente", "telefone_respondente", "email", "telefone"]
+        .filter((k) => d[k])
+        .map((k) => `- ${k.replace(/_/g, " ")}: ${d[k]}`),
+    ].join("\n");
     const { auditarRelatorio } = await import("./auditoria.server");
-    return auditarRelatorio(`Imobiliária: ${diag.nome_imobiliaria}\n\n${texto}`, rel.conteudo as string);
+    return auditarRelatorio(
+      `# Dados cadastrais\n\n${cadastro}\n\n# Respostas do questionário\n\n${texto}`,
+      rel.conteudo as string,
+      { diagnosticoId: data.id, relatorioId: data.relatorioId },
+    );
   });
 
 export const regenerarRelatorio = createServerFn({ method: "POST" })

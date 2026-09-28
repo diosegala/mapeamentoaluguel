@@ -115,17 +115,27 @@ export const listarUsoApi = createServerFn({ method: "GET" })
     if (data.diagnostico_id) consulta = consulta.eq("diagnostico_id", data.diagnostico_id);
     if (data.modelo) consulta = consulta.eq("modelo", data.modelo);
 
-    const { data: linhas, error } = await consulta;
+    let consultaAud = (context.supabase as any)
+      .from("auditorias")
+      .select("id, created_at, modelo, tokens_entrada, tokens_saida, diagnostico_id, diagnosticos(codigo, nome_imobiliaria)")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (data.de) consultaAud = consultaAud.gte("created_at", `${data.de}T00:00:00Z`);
+    if (data.ate) consultaAud = consultaAud.lte("created_at", `${data.ate}T23:59:59Z`);
+    if (data.diagnostico_id) consultaAud = consultaAud.eq("diagnostico_id", data.diagnostico_id);
+    if (data.modelo) consultaAud = consultaAud.eq("modelo", data.modelo);
+
+    const [{ data: linhas, error }, { data: auds }] = await Promise.all([consulta, consultaAud]);
     if (error) throw new Error(error.message);
 
-    return (linhas ?? []).map((l: any) => {
+    const mapear = (l: any, status: string) => {
       const entrada = l.tokens_entrada ?? 0;
       const saida = l.tokens_saida ?? 0;
       return {
         id: l.id as string,
         created_at: l.created_at as string,
         modelo: (l.modelo ?? null) as string | null,
-        status: l.status as string,
+        status,
         entrada,
         saida,
         custo: custoDe(l.modelo ?? null, entrada, saida),
@@ -133,5 +143,9 @@ export const listarUsoApi = createServerFn({ method: "GET" })
         codigo: l.diagnosticos?.codigo ?? "—",
         diagnostico_id: l.diagnostico_id as string,
       };
-    });
+    };
+    return [
+      ...(linhas ?? []).map((l: any) => mapear(l, l.status)),
+      ...((auds ?? []) as any[]).map((l) => mapear(l, "revisão")),
+    ].sort((a, b) => b.created_at.localeCompare(a.created_at));
   });
