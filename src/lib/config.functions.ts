@@ -134,6 +134,16 @@ export const alternarPergunta = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const excluirPergunta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { error } = await context.supabase.from("perguntas_formulario").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const reordenarPerguntas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
