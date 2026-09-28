@@ -93,11 +93,35 @@ function Detalhe() {
                 <Button variant="outline" disabled={!ultimo} onClick={() => window.open(link, "_blank")}>
                   Baixar PDF
                 </Button>
+                <Button variant="outline" disabled={!ultimo} onClick={() => setMostrarEmail((v) => !v)}>
+                  Enviar por e-mail
+                </Button>
                 <Button disabled={regen.isPending || Object.keys(respostas).length === 0} onClick={() => regen.mutate()}>
                   {regen.isPending ? "Gerando..." : "Regenerar relatório"}
                 </Button>
               </div>
             </header>
+
+            {mostrarEmail && (
+              <section className="flex flex-wrap items-center gap-3 rounded-[10px] border border-border bg-card p-4">
+                <Input
+                  type="email"
+                  placeholder="E-mail do cliente"
+                  value={emailDestino}
+                  onChange={(e) => setEmailDestino(e.target.value)}
+                  className="max-w-xs"
+                />
+                <Button
+                  disabled={envio.isPending || !emailDestino.trim()}
+                  onClick={() => envio.mutate()}
+                >
+                  {envio.isPending ? "Enviando..." : "Enviar relatório"}
+                </Button>
+                <p className="w-full text-xs text-foreground-subtle">
+                  Enquanto o subdomínio da cupola.com.br não estiver verificado no Resend, os envios de teste só chegam ao e-mail do dono da conta Resend.
+                </p>
+              </section>
+            )}
 
             <section className="rounded-[10px] border border-border bg-card p-6">
               <h2 className="mb-4 text-[18px] font-bold">Versões do relatório</h2>
