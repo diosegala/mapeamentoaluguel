@@ -27,7 +27,7 @@ function chaveDe(texto: string) {
 const opcaoSchema = z.string().trim().min(1).max(200);
 
 const perguntaSchema = z.object({
-  secao: z.number().int().min(1).max(6),
+  secao: z.number().int().min(1).max(10000),
   texto: z.string().trim().min(3).max(500),
   descricao: z.string().trim().max(500).optional().nullable(),
   tipo: z.enum(["texto", "texto_longo", "escolha_unica", "escolha_multipla", "numero", "moeda"]),
@@ -264,6 +264,56 @@ export const ativarVersaoPrompt = createServerFn({ method: "POST" })
       .from("configuracoes_agente")
       .update({ ativo: true })
       .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------- Seções ---------------- */
+
+export const listarSecoes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { data, error } = await (context.supabase as any)
+      .from("secoes_formulario")
+      .select("id, numero, nome")
+      .order("numero", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as { id: string; numero: number; nome: string }[];
+  });
+
+export const salvarSecaoAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid().optional(), nome: z.string().trim().min(2).max(80) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const sb = context.supabase as any;
+    const q = data.id
+      ? sb.from("secoes_formulario").update({ nome: data.nome }).eq("id", data.id)
+      : sb.from("secoes_formulario").insert({ nome: data.nome });
+    const { data: s, error } = await q.select("id, numero, nome").single();
+    if (error) throw new Error(error.message);
+    return s as { id: string; numero: number; nome: string };
+  });
+
+export const excluirSecao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const sb = context.supabase as any;
+    const { data: s, error: e1 } = await sb.from("secoes_formulario").select("numero").eq("id", data.id).single();
+    if (e1) throw new Error(e1.message);
+    const { count } = await sb
+      .from("perguntas_formulario")
+      .select("id", { count: "exact", head: true })
+      .eq("secao", s.numero)
+      .eq("ativo", true);
+    if ((count ?? 0) > 0)
+      throw new Error("Esta seção ainda tem perguntas ativas. Mova ou desative as perguntas antes de excluir.");
+    const { error } = await sb.from("secoes_formulario").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

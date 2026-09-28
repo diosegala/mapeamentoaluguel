@@ -107,8 +107,8 @@ export const salvarSecao = createServerFn({ method: "POST" })
     z
       .object({
         codigo: z.string().max(12),
-        secao: z.number().int().min(1).max(6),
-        proxima: z.number().int().min(1).max(7),
+        secao: z.number().int().min(1).max(10000),
+        proxima: z.number().int().min(1).max(10001),
         respostas: z.record(
           z.string().max(120),
           z.union([
@@ -147,7 +147,7 @@ export const salvarSecao = createServerFn({ method: "POST" })
       .from("diagnosticos")
       .update({
         respostas: { ...(diag.respostas ?? {}), ...limpas },
-        secao_atual: Math.max(diag.secao_atual ?? 1, Math.min(data.proxima, 6)),
+        secao_atual: Math.max(diag.secao_atual ?? 1, data.proxima),
         status: "em_andamento",
       })
       .eq("id", diag.id);
