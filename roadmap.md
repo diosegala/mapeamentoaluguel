@@ -13,4 +13,5 @@
 - [x] Painel admin: base de conhecimento (links, sem limite)
 - [x] Painel admin: chave da API + dashboard de uso (tokens/custo, filtros)
 - [x] Versão PDF do relatório (impressão com capa, seções numeradas, rodapé)
-- [ ] Teste ponta a ponta (precisa da chave Anthropic configurada no painel)
+- [x] Primeiro teste ponta a ponta: identificada interrupção por limite de tokens; geração agora exige fim confirmado e continua respostas longas
+- [ ] Confirmar uma nova geração completa do diagnóstico Cupolab (requer acionamento e uso da chave Anthropic configurada)
