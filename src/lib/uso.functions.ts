@@ -149,4 +149,3 @@ export const listarUsoApi = createServerFn({ method: "GET" })
       ...((auds ?? []) as any[]).map((l) => mapear(l, "revisão")),
     ].sort((a, b) => b.created_at.localeCompare(a.created_at));
   });
-  });
