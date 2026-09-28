@@ -14,6 +14,7 @@ import {
   alternarPergunta,
   atualizarPergunta,
   criarPergunta,
+  excluirPergunta,
   excluirSecao,
   listarPerguntas,
   listarSecoes,
@@ -74,6 +75,7 @@ function Perguntas() {
   const criar = useServerFn(criarPergunta);
   const atualizar = useServerFn(atualizarPergunta);
   const alternar = useServerFn(alternarPergunta);
+  const excluirPerguntaFn = useServerFn(excluirPergunta);
   const reordenar = useServerFn(reordenarPerguntas);
   const listarSecoesFn = useServerFn(listarSecoes);
   const salvarSecaoFn = useServerFn(salvarSecaoAdmin);
@@ -134,6 +136,15 @@ function Perguntas() {
     mutationFn: (v: { id: string; ativo: boolean }) => alternar({ data: v }),
     onSuccess: () => invalidar(),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro."),
+  });
+
+  const excluirMut = useMutation({
+    mutationFn: (id: string) => excluirPerguntaFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Pergunta excluída.");
+      invalidar();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
   const reordenarMut = useMutation({
@@ -351,6 +362,23 @@ function Perguntas() {
                     }}
                   >
                     Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    title="Excluir pergunta"
+                    disabled={excluirMut.isPending}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Excluir definitivamente a pergunta "${p.texto}"? Respostas já enviadas continuam guardadas nos diagnósticos.`,
+                        )
+                      )
+                        excluirMut.mutate(p.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
