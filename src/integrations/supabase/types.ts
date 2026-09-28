@@ -301,6 +301,8 @@ export type Database = {
           modelo: string | null
           prompt_snapshot: string | null
           status: string
+          tokens_cache_criacao: number | null
+          tokens_cache_leitura: number | null
           tokens_entrada: number | null
           tokens_saida: number | null
           updated_at: string
@@ -316,6 +318,8 @@ export type Database = {
           modelo?: string | null
           prompt_snapshot?: string | null
           status?: string
+          tokens_cache_criacao?: number | null
+          tokens_cache_leitura?: number | null
           tokens_entrada?: number | null
           tokens_saida?: number | null
           updated_at?: string
@@ -331,6 +335,8 @@ export type Database = {
           modelo?: string | null
           prompt_snapshot?: string | null
           status?: string
+          tokens_cache_criacao?: number | null
+          tokens_cache_leitura?: number | null
           tokens_entrada?: number | null
           tokens_saida?: number | null
           updated_at?: string
