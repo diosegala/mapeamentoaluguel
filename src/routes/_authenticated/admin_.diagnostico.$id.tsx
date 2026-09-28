@@ -151,7 +151,7 @@ function Detalhe() {
                   <div>
                     <h2 className="text-[18px] font-bold">Revisão de qualidade (v{ultimo.versao})</h2>
                     <p className="text-sm text-foreground-muted">
-                      Uma IA revisora compara as respostas com o relatório e aponta inconsistências, lacunas e recomendações sem evidência.
+                      Revisão feita por Claude Haiku: compara cadastro e respostas com o relatório e aponta inconsistências, lacunas e recomendações sem evidência.
                     </p>
                   </div>
                   <Button
