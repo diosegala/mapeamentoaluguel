@@ -384,7 +384,7 @@ function EditorPergunta({
             <label className="text-[13px] font-semibold text-foreground-muted">Opções</label>
             <div className="mt-2 space-y-2">
               {valor.opcoes.map((op, i) => (
-                <div key={`${op}-${i}`} className="flex items-center gap-2">
+                <div key={i} className="flex items-center gap-2">
                   <Input
                     className="h-10"
                     value={op}
