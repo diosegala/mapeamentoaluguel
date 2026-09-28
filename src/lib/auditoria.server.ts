@@ -19,7 +19,7 @@ Um parágrafo curto: o relatório pode ser enviado ao cliente como está, com aj
 Regras: cite trechos curtos entre aspas e a pergunta/resposta correspondente. Seja objetivo, use listas. Se não houver problemas em uma seção, escreva "Nenhum ponto encontrado." Limite a resposta a cerca de 900 palavras.`;
 
 export async function auditarRelatorio(respostasTexto: string, relatorio: string) {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("Chave do AI Gateway não configurada.");
 
   const res = await fetch(GATEWAY, {
