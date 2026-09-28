@@ -145,7 +145,7 @@ function Formulario() {
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-card">
           <div className="h-full bg-primary transition-all" style={{ width: `${((indice + 1) / secoes.length) * 100}%` }} />
         </div>
-        <h1 className="mt-6 text-[30px] leading-[36px] font-bold text-foreground">{NOMES_SECOES[secao] ?? `Seção ${secao}`}</h1>
+        <h1 className="mt-6 text-[30px] leading-[36px] font-bold text-foreground">{q.data.nomesSecoes?.[secao] ?? NOMES_SECOES[secao] ?? `Seção ${secao}`}</h1>
 
         <div className="mt-8 space-y-8">
           {perguntas.map((p) => (

@@ -73,6 +73,11 @@ export const abrirDiagnostico = createServerFn({ method: "POST" })
       .eq("ativo", true)
       .order("secao")
       .order("ordem");
+    const { data: secoesDb } = await (supabaseAdmin as any)
+      .from("secoes_formulario")
+      .select("numero, nome");
+    const nomesSecoes: Record<number, string> = {};
+    for (const s of (secoesDb ?? []) as { numero: number; nome: string }[]) nomesSecoes[s.numero] = s.nome;
     if (!diag.iniciado_em && diag.status === "nao_iniciado") {
       await supabaseAdmin
         .from("diagnosticos")
@@ -85,6 +90,7 @@ export const abrirDiagnostico = createServerFn({ method: "POST" })
       nome: diag.nome_imobiliaria as string,
       status: diag.status as string,
       secao_atual: diag.secao_atual as number,
+      nomesSecoes,
       respostas: (diag.respostas ?? {}) as Record<string, string | number | string[] | null>,
       perguntas: (perguntas ?? []) as Array<{
         chave: string;
