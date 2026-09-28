@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Plus, Save, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,11 @@ import {
   alternarPergunta,
   atualizarPergunta,
   criarPergunta,
+  excluirSecao,
   listarPerguntas,
+  listarSecoes,
   reordenarPerguntas,
+  salvarSecaoAdmin,
 } from "@/lib/config.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/perguntas")({
@@ -59,14 +62,7 @@ const TIPOS = [
   { valor: "moeda", rotulo: "Valor em R$" },
 ] as const;
 
-const SECOES = [
-  "1 · Perfil da imobiliária",
-  "2 · Pessoas",
-  "3 · Processos",
-  "4 · Tecnologia",
-  "5 · Uso de IA",
-  "6 · Indicadores",
-];
+type Secao = { id: string; numero: number; nome: string };
 
 function ehEscolha(tipo: string) {
   return tipo === "escolha_unica" || tipo === "escolha_multipla";
@@ -79,6 +75,9 @@ function Perguntas() {
   const atualizar = useServerFn(atualizarPergunta);
   const alternar = useServerFn(alternarPergunta);
   const reordenar = useServerFn(reordenarPerguntas);
+  const listarSecoesFn = useServerFn(listarSecoes);
+  const salvarSecaoFn = useServerFn(salvarSecaoAdmin);
+  const excluirSecaoFn = useServerFn(excluirSecao);
 
   const [secao, setSecao] = useState(1);
   const [editando, setEditando] = useState<Pergunta | null>(null);
@@ -88,6 +87,7 @@ function Perguntas() {
     queryKey: ["perguntas"],
     queryFn: () => listar(),
   });
+  const secoesQ = useQuery({ queryKey: ["secoes"], queryFn: () => listarSecoesFn() });
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ["perguntas"] });
 
@@ -142,12 +142,35 @@ function Perguntas() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reordenar."),
   });
 
+  const secoes = secoesQ.data ?? [];
+  const secaoAtiva = secoes.some((s) => s.numero === secao) ? secao : (secoes[0]?.numero ?? secao);
+  const secaoObj = secoes.find((s) => s.numero === secaoAtiva);
+
+  const secaoMut = useMutation({
+    mutationFn: (v: { id?: string; nome: string }) => salvarSecaoFn({ data: v }),
+    onSuccess: (s) => {
+      toast.success("Seção salva.");
+      setSecao(s.numero);
+      queryClient.invalidateQueries({ queryKey: ["secoes"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar seção."),
+  });
+
+  const excluirSecaoMut = useMutation({
+    mutationFn: (id: string) => excluirSecaoFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Seção excluída.");
+      queryClient.invalidateQueries({ queryKey: ["secoes"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao excluir seção."),
+  });
+
   const todas = ((data ?? []) as Pergunta[]).map((p) => ({
     ...p,
     opcoes: Array.isArray(p.opcoes) ? p.opcoes : [],
   }));
   const daSecao = todas
-    .filter((p) => p.secao === secao)
+    .filter((p) => p.secao === secaoAtiva)
     .sort((a, b) => a.ordem - b.ordem);
 
   function mover(indice: number, direcao: -1 | 1) {
@@ -165,7 +188,7 @@ function Perguntas() {
     setCriandoNova(true);
     setEditando({
       id: "",
-      secao,
+      secao: secaoAtiva,
       chave: "",
       texto: "",
       descricao: "",
@@ -195,28 +218,69 @@ function Perguntas() {
           </Button>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {SECOES.map((rotulo, i) => (
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          {secoes.map((s, i) => (
             <button
-              key={rotulo}
+              key={s.id}
               type="button"
-              onClick={() => setSecao(i + 1)}
+              onClick={() => setSecao(s.numero)}
               className={`rounded-[8px] border px-3 py-2 text-sm transition-colors ${
-                secao === i + 1
+                secaoAtiva === s.numero
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-foreground-muted hover:text-foreground"
               }`}
             >
-              {rotulo}
+              {i + 1} · {s.nome}
             </button>
           ))}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={() => {
+              const nome = window.prompt("Nome da nova seção:");
+              if (nome?.trim()) secaoMut.mutate({ nome: nome.trim() });
+            }}
+          >
+            <Plus className="h-4 w-4" /> Nova seção
+          </Button>
         </div>
+
+        {secaoObj ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
+            <span>Seção selecionada: <strong className="text-foreground">{secaoObj.nome}</strong></span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1"
+              onClick={() => {
+                const nome = window.prompt("Novo nome da seção:", secaoObj.nome);
+                if (nome?.trim() && nome.trim() !== secaoObj.nome)
+                  secaoMut.mutate({ id: secaoObj.id, nome: nome.trim() });
+              }}
+            >
+              <Pencil className="h-4 w-4" /> Renomear
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 text-destructive"
+              onClick={() => {
+                if (window.confirm(`Excluir a seção "${secaoObj.nome}"?`))
+                  excluirSecaoMut.mutate(secaoObj.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" /> Excluir
+            </Button>
+          </div>
+        ) : null}
 
         {editando ? (
           <EditorPergunta
             valor={editando}
             nova={criandoNova}
             salvando={salvarMut.isPending}
+            secoes={secoes}
             onCancelar={() => {
               setEditando(null);
               setCriandoNova(false);
@@ -302,6 +366,7 @@ function EditorPergunta({
   valor,
   nova,
   salvando,
+  secoes,
   onMudar,
   onSalvar,
   onCancelar,
@@ -309,6 +374,7 @@ function EditorPergunta({
   valor: Pergunta;
   nova: boolean;
   salvando: boolean;
+  secoes: Secao[];
   onMudar: (p: Pergunta) => void;
   onSalvar: () => void;
   onCancelar: () => void;
@@ -370,9 +436,9 @@ function EditorPergunta({
               value={valor.secao}
               onChange={(e) => onMudar({ ...valor, secao: Number(e.target.value) })}
             >
-              {SECOES.map((s, i) => (
-                <option key={s} value={i + 1}>
-                  {s}
+              {secoes.map((s, i) => (
+                <option key={s.id} value={s.numero}>
+                  {i + 1} · {s.nome}
                 </option>
               ))}
             </select>

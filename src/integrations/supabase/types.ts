@@ -352,6 +352,30 @@ export type Database = {
           },
         ]
       }
+      secoes_formulario: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          numero: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          numero?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          numero?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tentativas_codigo: {
         Row: {
           created_at: string
