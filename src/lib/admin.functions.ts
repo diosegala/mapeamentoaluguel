@@ -120,39 +120,28 @@ export const enviarRelatorioPorEmail = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        email: z.string().trim().email("Informe um e-mail válido.").max(200),
+        email: z.string().trim().email("Informe um e-mail válido.").max(200).optional(),
       })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
-
-    const [{ data: diag, error }, { data: relatorio }] = await Promise.all([
-      context.supabase
-        .from("diagnosticos")
-        .select("id, codigo, nome_imobiliaria")
-        .eq("id", data.id)
-        .single(),
-      context.supabase
-        .from("relatorios")
-        .select("id")
-        .eq("diagnostico_id", data.id)
-        .eq("status", "concluido")
-        .order("versao", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
-    if (error || !diag) throw new Error("Diagnóstico não encontrado.");
+    const { data: relatorio } = await context.supabase
+      .from("relatorios")
+      .select("id")
+      .eq("diagnostico_id", data.id)
+      .eq("status", "concluido")
+      .order("versao", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     if (!relatorio) throw new Error("Ainda não há um relatório concluído para enviar.");
-
-    const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
-    const link = `${base}/relatorio/${diag.codigo}`;
-
-    const { enviarEmail, montarEmailRelatorio } = await import("./email.server");
-    const { assunto, html } = montarEmailRelatorio({
-      nomeImobiliaria: diag.nome_imobiliaria,
-      linkRelatorio: link,
+    const { enviarRelatorioDiagnostico } = await import("./email.server");
+    const r = await enviarRelatorioDiagnostico({
+      diagnosticoId: data.id,
+      relatorioId: relatorio.id,
+      para: data.email ?? null,
+      automatico: false,
     });
-    await enviarEmail({ para: data.email, assunto, html });
+    if (!r.ok) throw new Error(r.erro ?? "Falha ao enviar.");
     return { ok: true };
   });

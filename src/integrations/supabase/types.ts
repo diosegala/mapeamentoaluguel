@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracao_email: {
+        Row: {
+          assunto: string
+          corpo: string
+          envio_automatico: boolean
+          id: string
+          rodape: string
+          texto_botao: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          assunto?: string
+          corpo?: string
+          envio_automatico?: boolean
+          id?: string
+          rodape?: string
+          texto_botao?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string
+          corpo?: string
+          envio_automatico?: boolean
+          id?: string
+          rodape?: string
+          texto_botao?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       configuracoes_agente: {
         Row: {
           ativo: boolean
@@ -154,6 +187,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      envios_email: {
+        Row: {
+          automatico: boolean
+          created_at: string
+          destinatario: string
+          diagnostico_id: string
+          erro: string | null
+          id: string
+          relatorio_id: string | null
+          resend_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          automatico?: boolean
+          created_at?: string
+          destinatario: string
+          diagnostico_id: string
+          erro?: string | null
+          id?: string
+          relatorio_id?: string | null
+          resend_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          automatico?: boolean
+          created_at?: string
+          destinatario?: string
+          diagnostico_id?: string
+          erro?: string | null
+          id?: string
+          relatorio_id?: string | null
+          resend_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "envios_email_diagnostico_id_fkey"
+            columns: ["diagnostico_id"]
+            isOneToOne: false
+            referencedRelation: "diagnosticos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "envios_email_relatorio_id_fkey"
+            columns: ["relatorio_id"]
+            isOneToOne: false
+            referencedRelation: "relatorios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       perguntas_formulario: {
         Row: {

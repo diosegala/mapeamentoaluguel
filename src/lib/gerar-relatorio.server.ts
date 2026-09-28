@@ -197,5 +197,22 @@ export async function executarRelatorio(relatorioId: string) {
   } catch (e) {
     console.error("gerar relatório", e);
     await falhar("Erro inesperado ao gerar o relatório.");
+    return;
+  }
+
+  // Envio automático ao cliente (apenas na primeira versão concluída).
+  try {
+    const { count } = await supabaseAdmin
+      .from("relatorios")
+      .select("id", { count: "exact", head: true })
+      .eq("diagnostico_id", diagnosticoId)
+      .eq("status", "concluido");
+    if ((count ?? 0) === 1) {
+      const { enviarRelatorioDiagnostico } = await import("./email.server");
+      const r = await enviarRelatorioDiagnostico({ diagnosticoId, relatorioId, automatico: true });
+      if (!r.ok && !r.pulado) console.error("envio automático", r.erro);
+    }
+  } catch (e) {
+    console.error("envio automático", e);
   }
 }

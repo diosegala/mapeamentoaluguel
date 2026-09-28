@@ -40,9 +40,9 @@ function Detalhe() {
     onSettled: () => q.refetch(),
   });
   const envio = useMutation({
-    mutationFn: () => enviarEmail({ data: { id, email: emailDestino.trim() } }),
+    mutationFn: () => enviarEmail({ data: { id, email: emailDestino.trim() || undefined } }),
     onSuccess: () => {
-      toast.success(`Relatório enviado para ${emailDestino.trim()}`);
+      toast.success(`Relatório enviado para ${emailDestino.trim() || "o e-mail do questionário"}`);
       setMostrarEmail(false);
       setEmailDestino("");
     },
@@ -106,13 +106,13 @@ function Detalhe() {
               <section className="flex flex-wrap items-center gap-3 rounded-[10px] border border-border bg-card p-4">
                 <Input
                   type="email"
-                  placeholder="E-mail do cliente"
+                  placeholder="Vazio = e-mail do questionário"
                   value={emailDestino}
                   onChange={(e) => setEmailDestino(e.target.value)}
                   className="max-w-xs"
                 />
                 <Button
-                  disabled={envio.isPending || !emailDestino.trim()}
+                  disabled={envio.isPending}
                   onClick={() => envio.mutate()}
                 >
                   {envio.isPending ? "Enviando..." : "Enviar relatório"}
