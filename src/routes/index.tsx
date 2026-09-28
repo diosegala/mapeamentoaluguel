@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Users, Workflow, MonitorCog, Sparkles, BarChart3 } from "lucide-react";
+import { ArrowRight, Users, Workflow, MonitorCog, BarChart3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
