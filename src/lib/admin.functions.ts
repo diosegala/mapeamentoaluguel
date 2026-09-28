@@ -103,6 +103,37 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
     };
   });
 
+export const auditarRelatorioIa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), relatorioId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const [{ data: diag }, { data: rel }, { data: perguntas }] = await Promise.all([
+      context.supabase.from("diagnosticos").select("respostas, nome_imobiliaria").eq("id", data.id).single(),
+      context.supabase
+        .from("relatorios")
+        .select("conteudo")
+        .eq("id", data.relatorioId)
+        .eq("diagnostico_id", data.id)
+        .single(),
+      context.supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
+    ]);
+    if (!diag || !rel?.conteudo) throw new Error("Relatório não encontrado.");
+    const respostas = (diag.respostas ?? {}) as Record<string, unknown>;
+    const fmt = (v: unknown) => (Array.isArray(v) ? v.join(", ") : v == null || v === "" ? "—" : String(v));
+    const texto = (perguntas ?? [])
+      .filter((p: any) => p.chave in respostas)
+      .map((p: any) => {
+        const outro = respostas[`${p.chave}__outro`];
+        return `- ${p.texto}\n  Resposta: ${fmt(respostas[p.chave])}${outro ? ` (Outro: ${outro})` : ""}`;
+      })
+      .join("\n");
+    const { auditarRelatorio } = await import("./auditoria.server");
+    return auditarRelatorio(`Imobiliária: ${diag.nome_imobiliaria}\n\n${texto}`, rel.conteudo as string);
+  });
+
 export const regenerarRelatorio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))

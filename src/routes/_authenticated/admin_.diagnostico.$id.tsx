@@ -8,7 +8,7 @@ import { AdminNav } from "@/components/cupola/admin-nav";
 import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
+import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -46,6 +46,11 @@ function Detalhe() {
       setMostrarEmail(false);
       setEmailDestino("");
     },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const auditar = useServerFn(auditarRelatorioIa);
+  const auditoria = useMutation({
+    mutationFn: (relatorioId: string) => auditar({ data: { id, relatorioId } }),
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -139,6 +144,31 @@ function Detalhe() {
                 ))}
               </ul>
             </section>
+
+            {ultimo?.conteudo && (
+              <section className="rounded-[10px] border border-border bg-card p-6">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-[18px] font-bold">Revisão de qualidade (v{ultimo.versao})</h2>
+                    <p className="text-sm text-foreground-muted">
+                      Uma IA revisora compara as respostas com o relatório e aponta inconsistências, lacunas e recomendações sem evidência.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={auditoria.isPending}
+                    onClick={() => auditoria.mutate(ultimo.id)}
+                  >
+                    {auditoria.isPending ? "Revisando..." : auditoria.data ? "Revisar novamente" : "Revisar relatório com IA"}
+                  </Button>
+                </div>
+                {auditoria.isPending && <p className="text-sm text-foreground-muted">Analisando, isso pode levar até um minuto...</p>}
+                {auditoria.error && <p className="text-sm text-destructive">{(auditoria.error as Error).message}</p>}
+                {auditoria.data && !auditoria.isPending && (
+                  <div className="mt-4"><RelatorioMarkdown conteudo={auditoria.data.conteudo} /></div>
+                )}
+              </section>
+            )}
 
             {ultimo?.conteudo && (
               <section className="rounded-[10px] border border-border bg-card p-6">
