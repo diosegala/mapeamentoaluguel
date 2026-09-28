@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,7 +7,8 @@ import { toast } from "sonner";
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
 import { Button } from "@/components/ui/button";
-import { detalheDiagnostico, regenerarRelatorio } from "@/lib/admin.functions";
+import { Input } from "@/components/ui/input";
+import { detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -22,6 +24,9 @@ function Detalhe() {
   const { id } = Route.useParams();
   const buscar = useServerFn(detalheDiagnostico);
   const regenerar = useServerFn(regenerarRelatorio);
+  const enviarEmail = useServerFn(enviarRelatorioPorEmail);
+  const [emailDestino, setEmailDestino] = useState("");
+  const [mostrarEmail, setMostrarEmail] = useState(false);
   const q = useQuery({
     queryKey: ["admin-diagnostico", id],
     queryFn: () => buscar({ data: { id } }),
@@ -33,6 +38,15 @@ function Detalhe() {
     onSuccess: () => toast.success("Nova versão gerada"),
     onError: (e) => toast.error((e as Error).message),
     onSettled: () => q.refetch(),
+  });
+  const envio = useMutation({
+    mutationFn: () => enviarEmail({ data: { id, email: emailDestino.trim() } }),
+    onSuccess: () => {
+      toast.success(`Relatório enviado para ${emailDestino.trim()}`);
+      setMostrarEmail(false);
+      setEmailDestino("");
+    },
+    onError: (e) => toast.error((e as Error).message),
   });
 
   const d = q.data?.diagnostico;
