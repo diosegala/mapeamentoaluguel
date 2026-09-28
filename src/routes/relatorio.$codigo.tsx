@@ -33,7 +33,11 @@ function Relatorio() {
 
   const q = useQuery({
     queryKey: ["relatorio-publico", codigo],
-    queryFn: () => ler({ data: { codigo } }),
+    queryFn: async () => {
+      const r = await ler({ data: { codigo } });
+      if (r.erro !== null) throw new Error(r.erro);
+      return r;
+    },
     retry: false,
     refetchInterval: (query) => {
       const d = query.state.data;

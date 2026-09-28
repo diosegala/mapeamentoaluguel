@@ -64,7 +64,9 @@ const entradaCodigo = (d: unknown) => z.object({ codigo: z.string().max(12) }).p
 export const abrirDiagnostico = createServerFn({ method: "POST" })
   .inputValidator(entradaCodigo)
   .handler(async ({ data }) => {
-    const { supabaseAdmin, diag } = await buscarPorCodigo(data.codigo);
+    let achado;
+    try { achado = await buscarPorCodigo(data.codigo); } catch (e) { return { erro: (e as Error).message } as const; }
+    const { supabaseAdmin, diag } = achado;
     const { data: perguntas } = await supabaseAdmin
       .from("perguntas_formulario")
       .select("chave, secao, texto, descricao, tipo, opcoes, permite_outro, obrigatoria, ordem")
@@ -78,6 +80,7 @@ export const abrirDiagnostico = createServerFn({ method: "POST" })
         .eq("id", diag.id);
     }
     return {
+      erro: null,
       codigo: diag.codigo as string,
       nome: diag.nome_imobiliaria as string,
       status: diag.status as string,
@@ -200,7 +203,9 @@ export const processarRelatorio = createServerFn({ method: "POST" })
 export const lerRelatorio = createServerFn({ method: "POST" })
   .inputValidator(entradaCodigo)
   .handler(async ({ data }) => {
-    const { supabaseAdmin, diag } = await buscarPorCodigo(data.codigo);
+    let achado;
+    try { achado = await buscarPorCodigo(data.codigo); } catch (e) { return { erro: (e as Error).message } as const; }
+    const { supabaseAdmin, diag } = achado;
     const { data: rel } = await supabaseAdmin
       .from("relatorios")
       .select("status, conteudo, created_at")
@@ -222,6 +227,7 @@ export const lerRelatorio = createServerFn({ method: "POST" })
       conteudo = ok?.conteudo ?? null;
     }
     return {
+      erro: null,
       nome: diag.nome_imobiliaria as string,
       statusDiagnostico: diag.status as string,
       statusRelatorio: (rel?.status ?? null) as string | null,

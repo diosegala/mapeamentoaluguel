@@ -48,7 +48,11 @@ function Formulario() {
 
   const q = useQuery({
     queryKey: ["formulario", codigo],
-    queryFn: () => abrir({ data: { codigo } }),
+    queryFn: async () => {
+      const r = await abrir({ data: { codigo } });
+      if (r.erro !== null) throw new Error(r.erro);
+      return r;
+    },
     retry: false,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
