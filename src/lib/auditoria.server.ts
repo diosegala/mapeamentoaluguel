@@ -67,7 +67,7 @@ export async function auditarRelatorio(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: MODELO,
+      model: modelo,
       max_tokens: 4000,
       stream: true,
       system: INSTRUCOES,
@@ -117,7 +117,7 @@ export async function auditarRelatorio(
   await supabaseAdmin.from("auditorias" as never).insert({
     diagnostico_id: registro.diagnosticoId,
     relatorio_id: registro.relatorioId,
-    modelo: MODELO,
+    modelo,
     tokens_entrada: entrada,
     tokens_saida: saida,
   } as never);
@@ -125,5 +125,5 @@ export async function auditarRelatorio(
   if (erro) throw new Error(erro);
   if (parada === "refusal") throw new Error("O modelo recusou fazer esta revisão.");
   if (!texto.trim()) throw new Error("O modelo não retornou conteúdo para a revisão.");
-  return { conteudo: texto, modelo: MODELO };
+  return { conteudo: texto, modelo };
 }
