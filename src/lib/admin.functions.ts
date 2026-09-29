@@ -74,14 +74,15 @@ export const excluirDiagnostico = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     for (const tabela of ["auditorias", "envios_email", "relatorios"] as const) {
-      const { error } = await context.supabase
+      const { error } = await supabaseAdmin
         .from(tabela)
         .delete()
         .eq("diagnostico_id", data.id);
       if (error) throw new Error(error.message);
     }
-    const { error } = await context.supabase.from("diagnosticos").delete().eq("id", data.id);
+    const { error } = await supabaseAdmin.from("diagnosticos").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
