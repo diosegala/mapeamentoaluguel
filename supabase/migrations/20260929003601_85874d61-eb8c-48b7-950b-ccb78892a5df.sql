@@ -1,0 +1,1 @@
+ALTER TABLE public.configuracao_email ADD COLUMN IF NOT EXISTS emails_alerta text NOT NULL DEFAULT '';
