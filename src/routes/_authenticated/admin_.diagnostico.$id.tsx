@@ -9,7 +9,7 @@ import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdo
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
-import { MODELOS_AUDITORIA } from "@/lib/auditoria.server";
+import { MODELOS_AUDITORIA } from "@/lib/auditoria-modelos";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
