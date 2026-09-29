@@ -34,15 +34,16 @@ Conferência: com os dados da planilha (500 imóveis, 14 desocupações, ICCA 5%
 1. **Cálculo no servidor:** uma nova rotina aplica a fórmula acima sempre que o diagnóstico tiver carteira, desocupações e captações preenchidas. O resultado entra no pedido à IA como um bloco "Projeção da carteira (calculada pela CUPOLA)".
 2. **Prompt v8** (o histórico é preservado): sai a regra atual de "Dinâmica da carteira" e entram instruções para usar o bloco calculado. O texto deve explicar TDCA, ICCA, TRID e TCNC em linguagem simples, comparar o resultado com a meta e mostrar quantas captações por mês seriam necessárias. Os 30% e 60% são apresentados como "referências médias observadas pela CUPOLA".
 3. **Regras fixas do gerador:** a proibição de comparar com o mercado continua, com uma exceção: a TRID e a TCNC de referência podem ser usadas. Entra uma nova regra: "se o questionário coletou o dado, nunca diga que ele não foi informado".
-3. **Contra textos genéricos** (prompt e regras fixas):
+4. **Contra textos genéricos** (prompt e regras fixas):
    - Cada parágrafo abre com o número do cliente e diz o que ele significa para a operação dele. Explicar conceitos e metodologia fica proibido.
    - Frases que serviriam para qualquer imobiliária ficam proibidas. Toda afirmação precisa citar pelo menos uma resposta ou um número do cliente.
    - "Pontos a validar" fica reservado a causas e hipóteses, nunca a dados que o questionário já coleta.
-4. **Revisão de qualidade:** passa a conhecer a fórmula e os percentuais, para não marcar como "inventado", e sinaliza textos genéricos e recusas indevidas de cálculo.
-5. **Validação:** regenerar o relatório da Imobiliária Teste (sem enviar e-mail ao cliente) e conferir o número projetado e o tom.
+5. **Revisão de qualidade:** passa a receber o mesmo bloco calculado, para não marcar os números como "inventados", e sinaliza textos genéricos e recusas indevidas de cálculo.
+6. **Validação:** conferir o cálculo com os números da planilha (resultado esperado: 539,4) e regenerar o relatório da Imobiliária Teste sem enviar e-mail ao cliente.
 
 ## Detalhes técnicos
-- Novo registro em `configuracoes_agente` (v8 ativa, v7 inativa), editando a seção "Dinâmica da carteira": sai a remoção de "Saldo mensal = locações − desocupações" como proxy de crescimento, entra a fórmula.
-- `src/lib/gerar-relatorio.server.ts`: ajustar a regra de números e mercado, e acrescentar as regras anti-genérico.
-- `src/lib/auditoria.server.ts`: incluir a fórmula e os percentuais aprovados no contexto do revisor.
+- Novo `src/lib/projecao-carteira.ts` (função pura): recebe `imoveis_administrados`, `desocupacoes_mes`, `captacoes_mes` e a meta, com TRID = 0,60 e TCNC = 0,30 como constantes nomeadas. Retorna TDCA, ICCA, o fator, a série dos meses 0 a 12, o crescimento e as captações necessárias por limite da meta. Um teste com vitest reproduz a planilha (500/14/0,05/0,78/0,25 → 539,39).
+- `src/lib/gerar-relatorio.server.ts`: injetar o bloco calculado na mensagem do usuário, que fica fora do cache do system. Ajustar a regra de números e mercado e acrescentar as regras anti-genérico.
+- `src/lib/auditoria.server.ts`: incluir o mesmo bloco no contexto do revisor.
+- Novo registro em `configuracoes_agente` (v8 ativa, v7 inativa), reescrevendo a seção "Dinâmica da carteira". A meta de faixa (`meta_12_meses`) é convertida em percentuais inferior e superior a partir do texto da opção.
 - Durante o teste, o envio automático para o cliente fica bloqueado.
