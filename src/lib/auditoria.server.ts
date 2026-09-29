@@ -42,7 +42,7 @@ export async function auditarRelatorio(
   registro: { diagnosticoId: string; relatorioId: string },
   modeloEscolhido?: string,
 ) {
-  const modelo = modeloValido(modeloEscolhido);
+  const modelo = modeloAuditoriaValido(modeloEscolhido);
   const chave = await chaveAnthropic();
   if (!chave) throw new Error("Chave da Anthropic não configurada. Cadastre-a na tela de API.");
 
