@@ -120,8 +120,10 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
         .order("created_at", { ascending: false }),
     ]);
     if (error || !diag) throw new Error("Diagnóstico não encontrado.");
+    const { numerosDestaque } = await import("./indicadores-operacao");
     return {
       diagnostico: diag as any,
+      numeros: numerosDestaque(((diag as any).respostas ?? {}) as Record<string, unknown>),
       relatorios: (relatorios ?? []) as any[],
       revisoes: (revisoes ?? []) as any[],
       perguntas: (perguntas ?? []) as Array<{ chave: string; texto: string; secao: number }>,

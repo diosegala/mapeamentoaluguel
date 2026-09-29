@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
-import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
+import { RelatorioCupola } from "@/components/cupola/relatorio-cupola";
+import { RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
@@ -202,10 +203,17 @@ function Detalhe() {
             )}
 
             {ultimo?.conteudo && (
-              <section className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="mb-4 text-[18px] font-bold">Relatório (v{ultimo.versao})</h2>
-                <AvisoIa />
-                <div className="mt-6"><RelatorioMarkdown conteudo={ultimo.conteudo} /></div>
+              <section className="grid gap-3">
+                <h2 className="text-[18px] font-bold">Relatório (v{ultimo.versao}), como o cliente vê</h2>
+                <div className="overflow-hidden rounded-2xl border border-border bg-background">
+                  <RelatorioCupola
+                    conteudo={ultimo.conteudo}
+                    nome={d.nome_imobiliaria}
+                    local={[d.cidade, d.estado].filter(Boolean).join("/")}
+                    geradoEm={ultimo.created_at}
+                    numeros={q.data!.numeros}
+                  />
+                </div>
               </section>
             )}
 
