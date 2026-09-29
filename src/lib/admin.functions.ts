@@ -163,8 +163,17 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
         .map((k) => `- ${k.replace(/_/g, " ")}: ${d[k]}`),
     ].join("\n");
     const { auditarRelatorio } = await import("./auditoria.server");
+    const { blocoProjecao, metasDoTexto, projetarCarteira } = await import("./projecao-carteira");
+    const projecao = blocoProjecao(
+      projetarCarteira({
+        carteira: respostas["imoveis_administrados"],
+        desocupacoes: respostas["desocupacoes_mes"],
+        captacoes: respostas["captacoes_mes"],
+        metas: metasDoTexto(respostas["meta_12_meses"]),
+      }),
+    );
     return auditarRelatorio(
-      `# Dados cadastrais\n\n${cadastro}\n\n# Respostas do questionário\n\n${texto}`,
+      `# Dados cadastrais\n\n${cadastro}\n\n# Respostas do questionário\n\n${texto}${projecao ? `\n\n${projecao}` : ""}`,
       rel.conteudo as string,
       { diagnosticoId: data.id, relatorioId: data.relatorioId },
       data.modelo,
