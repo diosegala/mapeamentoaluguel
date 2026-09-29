@@ -9,6 +9,7 @@ import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdo
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
+import { MODELOS_AUDITORIA } from "@/lib/auditoria.server";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -49,8 +50,9 @@ function Detalhe() {
     onError: (e) => toast.error((e as Error).message),
   });
   const auditar = useServerFn(auditarRelatorioIa);
+  const [modeloAuditoria, setModeloAuditoria] = useState<string>(MODELOS_AUDITORIA[0].id);
   const auditoria = useMutation({
-    mutationFn: (relatorioId: string) => auditar({ data: { id, relatorioId } }),
+    mutationFn: (relatorioId: string) => auditar({ data: { id, relatorioId, modelo: modeloAuditoria } }),
     onError: (e) => toast.error((e as Error).message),
   });
 
