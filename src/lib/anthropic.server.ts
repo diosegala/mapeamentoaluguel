@@ -47,8 +47,12 @@ export async function chamarAnthropicStream(chave: string, corpo: unknown): Prom
   }
   res.status = resp.status;
   if (!resp.ok || !resp.body) {
-    const json: any = await resp.json().catch(() => null);
-    res.erro = json?.error?.message ?? "erro desconhecido";
+    // Respostas de erro fora do padrão (por exemplo, de proxies) são guardadas em parte para diagnóstico.
+    const bruto = await resp.text().catch(() => "");
+    let json: any = null;
+    try { json = JSON.parse(bruto); } catch { /* não é JSON */ }
+    const trecho = bruto.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+    res.erro = json?.error?.message ?? (trecho || resp.statusText || "erro desconhecido");
     res.transitorio = resp.status === 429 || resp.status >= 500;
     return res;
   }
