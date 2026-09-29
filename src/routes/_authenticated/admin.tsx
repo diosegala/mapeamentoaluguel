@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { criarDiagnostico, listarDiagnosticos } from "@/lib/admin.functions";
+import { criarDiagnostico, excluirDiagnostico, listarDiagnosticos } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -32,6 +32,7 @@ function Admin() {
   const queryClient = useQueryClient();
   const listar = useServerFn(listarDiagnosticos);
   const criar = useServerFn(criarDiagnostico);
+  const excluir = useServerFn(excluirDiagnostico);
 
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
@@ -54,6 +55,15 @@ function Admin() {
       queryClient.invalidateQueries({ queryKey: ["diagnosticos"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar."),
+  });
+
+  const excluirMut = useMutation({
+    mutationFn: (id: string) => excluir({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Diagnóstico excluído.");
+      queryClient.invalidateQueries({ queryKey: ["diagnosticos"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
 
@@ -170,17 +180,33 @@ function Admin() {
                         {new Date(d.created_at).toLocaleDateString("pt-BR")}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => {
-                            navigator.clipboard.writeText(d.codigo);
-                            toast.success("Código copiado");
-                          }}
-                        >
-                          <Copy className="h-3.5 w-3.5" /> Copiar
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => {
+                              navigator.clipboard.writeText(d.codigo);
+                              toast.success("Código copiado");
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" /> Copiar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-destructive hover:text-destructive"
+                            disabled={excluirMut.isPending}
+                            onClick={() => {
+                              const ok = window.confirm(
+                                `Excluir o diagnóstico de "${d.nome_imobiliaria}" (${d.codigo})?\n\nIsso remove também relatórios, envios de e-mail e registros de uso vinculados. Essa ação não pode ser desfeita.`,
+                              );
+                              if (ok) excluirMut.mutate(d.id);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Excluir
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

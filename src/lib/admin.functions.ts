@@ -69,6 +69,24 @@ export const criarDiagnostico = createServerFn({ method: "POST" })
     throw new Error("Não foi possível gerar um código único. Tente novamente.");
   });
 
+export const excluirDiagnostico = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    for (const tabela of ["auditorias", "envios_email", "relatorios"] as const) {
+      const { error } = await supabaseAdmin
+        .from(tabela)
+        .delete()
+        .eq("diagnostico_id", data.id);
+      if (error) throw new Error(error.message);
+    }
+    const { error } = await supabaseAdmin.from("diagnosticos").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const souAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
