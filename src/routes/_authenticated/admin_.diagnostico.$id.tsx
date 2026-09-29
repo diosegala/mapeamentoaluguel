@@ -9,6 +9,7 @@ import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdo
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
+import { MODELOS_AUDITORIA } from "@/lib/auditoria-modelos";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -49,8 +50,9 @@ function Detalhe() {
     onError: (e) => toast.error((e as Error).message),
   });
   const auditar = useServerFn(auditarRelatorioIa);
+  const [modeloAuditoria, setModeloAuditoria] = useState<string>(MODELOS_AUDITORIA[0].id);
   const auditoria = useMutation({
-    mutationFn: (relatorioId: string) => auditar({ data: { id, relatorioId } }),
+    mutationFn: (relatorioId: string) => auditar({ data: { id, relatorioId, modelo: modeloAuditoria } }),
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -151,16 +153,29 @@ function Detalhe() {
                   <div>
                     <h2 className="text-[18px] font-bold">Revisão de qualidade (v{ultimo.versao})</h2>
                     <p className="text-sm text-foreground-muted">
-                      Revisão feita por Claude Haiku: compara cadastro e respostas com o relatório e aponta inconsistências, lacunas e recomendações sem evidência.
+                      Revisão feita por IA: compara cadastro e respostas com o relatório e aponta inconsistências, lacunas e recomendações sem evidência.
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    disabled={auditoria.isPending}
-                    onClick={() => auditoria.mutate(ultimo.id)}
-                  >
-                    {auditoria.isPending ? "Revisando..." : auditoria.data ? "Revisar novamente" : "Revisar relatório com IA"}
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={modeloAuditoria}
+                      onChange={(e) => setModeloAuditoria(e.target.value)}
+                      disabled={auditoria.isPending}
+                      className="h-9 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground"
+                      aria-label="Modelo da revisão"
+                    >
+                      {MODELOS_AUDITORIA.map((m) => (
+                        <option key={m.id} value={m.id}>{m.rotulo}</option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="outline"
+                      disabled={auditoria.isPending}
+                      onClick={() => auditoria.mutate(ultimo.id)}
+                    >
+                      {auditoria.isPending ? "Revisando..." : auditoria.data ? "Revisar novamente" : "Revisar relatório com IA"}
+                    </Button>
+                  </div>
                 </div>
                 {auditoria.isPending && <p className="text-sm text-foreground-muted">Analisando, isso pode levar até um minuto...</p>}
                 {auditoria.error && <p className="text-sm text-destructive">{(auditoria.error as Error).message}</p>}

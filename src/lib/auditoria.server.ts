@@ -1,6 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const MODELO = "claude-haiku-4-5";
+import { modeloAuditoriaValido } from "@/lib/auditoria-modelos";
 
 const INSTRUCOES = `Você é um auditor de qualidade da CUPOLA. Recebe os dados cadastrais da imobiliária, as respostas de um questionário de diagnóstico da operação de locação e o relatório gerado por IA a partir delas.
 Os dados cadastrais (nome, cidade, estado e contato) são fatos válidos informados pela imobiliária: nunca aponte como invenção uma informação que conste neles.
@@ -41,7 +40,9 @@ export async function auditarRelatorio(
   contexto: string,
   relatorio: string,
   registro: { diagnosticoId: string; relatorioId: string },
+  modeloEscolhido?: string,
 ) {
+  const modelo = modeloAuditoriaValido(modeloEscolhido);
   const chave = await chaveAnthropic();
   if (!chave) throw new Error("Chave da Anthropic não configurada. Cadastre-a na tela de API.");
 
@@ -53,7 +54,7 @@ export async function auditarRelatorio(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: MODELO,
+      model: modelo,
       max_tokens: 4000,
       stream: true,
       system: INSTRUCOES,
@@ -103,7 +104,7 @@ export async function auditarRelatorio(
   await supabaseAdmin.from("auditorias" as never).insert({
     diagnostico_id: registro.diagnosticoId,
     relatorio_id: registro.relatorioId,
-    modelo: MODELO,
+    modelo,
     tokens_entrada: entrada,
     tokens_saida: saida,
   } as never);
@@ -111,5 +112,5 @@ export async function auditarRelatorio(
   if (erro) throw new Error(erro);
   if (parada === "refusal") throw new Error("O modelo recusou fazer esta revisão.");
   if (!texto.trim()) throw new Error("O modelo não retornou conteúdo para a revisão.");
-  return { conteudo: texto, modelo: MODELO };
+  return { conteudo: texto, modelo };
 }
