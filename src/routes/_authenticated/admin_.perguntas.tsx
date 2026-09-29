@@ -219,7 +219,7 @@ function Perguntas() {
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Perguntas do diagnóstico</h1>
+            <h1 className="titulo-marca text-[20px]">Perguntas do diagnóstico</h1>
             <p className="mt-1 text-sm text-foreground-muted">
               Edite o texto, o tipo, a ordem e quais perguntas aparecem no formulário.
             </p>
@@ -314,7 +314,7 @@ function Perguntas() {
             daSecao.map((p, i) => (
               <div
                 key={p.id}
-                className={`flex flex-wrap items-start gap-3 rounded-[10px] border border-border bg-card p-4 ${
+                className={`flex flex-wrap items-start gap-3 rounded-2xl border border-border bg-card p-4 ${
                   p.ativo ? "" : "opacity-60"
                 }`}
               >
@@ -410,7 +410,7 @@ function EditorPergunta({
   const [novaOpcao, setNovaOpcao] = useState("");
 
   return (
-    <section className="mt-6 rounded-[10px] border border-primary/40 bg-card p-6">
+    <section className="mt-6 rounded-2xl border border-primary/40 bg-card p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-foreground">
           {nova ? "Nova pergunta" : "Editar pergunta"}

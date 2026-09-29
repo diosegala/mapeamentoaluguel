@@ -107,12 +107,12 @@ function ConfigApi() {
       <AdminNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <h1 className="text-xl font-bold text-foreground">Chave da API e uso</h1>
+        <h1 className="titulo-marca text-[20px]">Chave da API e uso</h1>
         <p className="mt-1 text-sm text-foreground-muted">
           A chave da Anthropic fica guardada com segurança no servidor e nunca aparece no site.
         </p>
 
-        <section className="mt-6 rounded-[10px] border border-border bg-card p-6">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               {chaveOk ? (
@@ -176,7 +176,7 @@ function ConfigApi() {
         <section className="mt-8">
           <h2 className="text-lg font-bold text-foreground">Uso da API</h2>
 
-          <div className="mt-3 grid gap-3 rounded-[10px] border border-border bg-card p-4 md:grid-cols-4">
+          <div className="mt-3 grid gap-3 rounded-2xl border border-border bg-card p-4 md:grid-cols-4">
             <div>
               <label className="text-[13px] font-semibold text-foreground-muted">De</label>
               <Input type="date" className="mt-1" value={de} onChange={(e) => setDe(e.target.value)} />
@@ -229,7 +229,7 @@ function ConfigApi() {
               { rotulo: "Tokens de saída", valor: numero(totais.saida) },
               { rotulo: "Custo estimado", valor: dolar(totais.custo) },
             ].map((c) => (
-              <div key={c.rotulo} className="rounded-[10px] border border-border bg-card p-4">
+              <div key={c.rotulo} className="rounded-2xl border border-border bg-card p-4">
                 <p className="text-[13px] text-foreground-muted">{c.rotulo}</p>
                 <p className="mt-1 text-2xl font-bold text-foreground">{c.valor}</p>
               </div>
@@ -248,7 +248,7 @@ function ConfigApi() {
             </p>
           ) : (
             <>
-              <div className="mt-8 rounded-[10px] border border-border bg-card p-4">
+              <div className="mt-8 rounded-2xl border border-border bg-card p-4">
                 <h3 className="text-[13px] font-semibold text-foreground-muted">Por cliente</h3>
                 <div className="mt-3 space-y-2">
                   {porCliente.map(([nome, v]) => (
@@ -262,7 +262,7 @@ function ConfigApi() {
                 </div>
               </div>
 
-              <div className="mt-6 overflow-x-auto rounded-[10px] border border-border bg-card">
+              <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-card">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border text-left text-[13px] text-foreground-muted">
                     <tr>

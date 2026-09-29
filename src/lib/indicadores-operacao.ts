@@ -91,6 +91,38 @@ function contradicoes(respostas: Record<string, unknown>): string[] {
   return out;
 }
 
+export type NumerosDestaque = {
+  carteira: number;
+  final: number;
+  crescimento: number;
+  captacoes: number;
+  serie: number[];
+  metas: Array<{ meta: number; captacoesMes: number }>;
+  conversao: { locacoes: number; leads: number } | null;
+};
+
+/** Números de destaque do relatório (cartões e gráfico), vindos do cálculo e não do texto da IA. */
+export function numerosDestaque(respostas: Record<string, unknown>): NumerosDestaque | null {
+  const p = projetarCarteira({
+    carteira: respostas["imoveis_administrados"],
+    desocupacoes: respostas["desocupacoes_mes"],
+    captacoes: respostas["captacoes_mes"],
+    metas: metasDoTexto(respostas["meta_12_meses"]),
+  });
+  if (!p) return null;
+  const locacoes = num(respostas["locacoes_mes"]);
+  const leads = num(respostas["leads_mes"]);
+  return {
+    carteira: p.carteira,
+    final: p.final,
+    crescimento: p.crescimento,
+    captacoes: p.captacoes,
+    serie: p.serie,
+    metas: p.metas.map((m) => ({ meta: m.meta, captacoesMes: m.captacoesMes })),
+    conversao: positivo(leads) && locacoes !== null ? { locacoes, leads } : null,
+  };
+}
+
 /** Blocos numéricos calculados no servidor, iguais para a geração e para a revisão. */
 export function blocosCalculados(respostas: Record<string, unknown>) {
   const p = projetarCarteira({

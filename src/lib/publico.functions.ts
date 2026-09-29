@@ -47,7 +47,7 @@ async function buscarPorCodigo(codigoBruto: unknown) {
   if (parsed.success) {
     const { data } = await supabaseAdmin
       .from("diagnosticos")
-      .select("id, codigo, nome_imobiliaria, status, secao_atual, respostas, iniciado_em")
+      .select("id, codigo, nome_imobiliaria, cidade, estado, status, secao_atual, respostas, iniciado_em")
       .eq("codigo", parsed.data)
       .maybeSingle();
     diag = data;
@@ -221,22 +221,30 @@ export const lerRelatorio = createServerFn({ method: "POST" })
       .maybeSingle();
     // Mostra a última versão concluída, se a mais nova ainda estiver gerando
     let conteudo: string | null = rel?.status === "concluido" ? rel.conteudo : null;
+    let geradoEm: string | null = rel?.status === "concluido" ? rel.created_at : null;
     if (!conteudo) {
       const { data: ok } = await supabaseAdmin
         .from("relatorios")
-        .select("conteudo")
+        .select("conteudo, created_at")
         .eq("diagnostico_id", diag.id)
         .eq("status", "concluido")
         .order("versao", { ascending: false })
         .limit(1)
         .maybeSingle();
       conteudo = ok?.conteudo ?? null;
+      geradoEm = ok?.created_at ?? null;
     }
+    const { numerosDestaque } = await import("./indicadores-operacao");
     return {
       erro: null,
       nome: diag.nome_imobiliaria as string,
+      cidade: (diag.cidade ?? "") as string,
+      estado: (diag.estado ?? "") as string,
       statusDiagnostico: diag.status as string,
       statusRelatorio: (rel?.status ?? null) as string | null,
+      iniciadoEm: (rel?.created_at ?? null) as string | null,
+      geradoEm,
       conteudo,
+      numeros: conteudo ? numerosDestaque((diag.respostas ?? {}) as Record<string, unknown>) : null,
     };
   });

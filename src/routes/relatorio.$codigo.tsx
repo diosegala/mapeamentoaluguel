@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Check, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
+import { RelatorioCupola } from "@/components/cupola/relatorio-cupola";
 import { Button } from "@/components/ui/button";
 import { concluirEGerar, lerRelatorio, processarRelatorio } from "@/lib/publico.functions";
 
@@ -53,50 +54,49 @@ function Relatorio() {
     }
   }, [d?.statusRelatorio, d?.conteudo]);
 
-  if (q.isLoading) return <Centro titulo="Carregando..." />;
+  if (q.isLoading) return <Tela titulo="Carregando..." />;
   if (q.error)
     return (
-      <Centro titulo="Não foi possível abrir" texto={(q.error as Error).message}>
-        <Link to="/" className="mt-6 inline-block text-sm underline">Voltar ao início</Link>
-      </Centro>
+      <Tela titulo="Não foi possível abrir" texto={(q.error as Error).message}>
+        <Link to="/" className="mt-8 inline-block text-sm text-foreground-on-dark underline">
+          Voltar ao início
+        </Link>
+      </Tela>
     );
   if (!d) return null;
 
   if (d.conteudo) {
     return (
-      <main className="min-h-screen bg-background px-6 py-12 print:p-0">
-        <article className="relatorio-pdf mx-auto max-w-3xl">
-          <div className="print-hidden mb-6 flex justify-end">
-            <Button onClick={() => window.print()}>Baixar PDF</Button>
-          </div>
-          <div className="relatorio-capa">
-            <span className="capa-marca inline-flex rounded-[40px] bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground">
-              Diagnóstico CUPOLA
-            </span>
-            <h1 className="mt-4 text-[34px] leading-[40px] font-bold text-foreground">{d.nome}</h1>
-            <p className="capa-meta mt-2 text-sm text-foreground-muted">
-              Diagnóstico da Operação de Locação · {new Date().toLocaleDateString("pt-BR")}
-            </p>
-          </div>
-          <div className="mt-6 print:hidden"><AvisoIa /></div>
-          <div className="relatorio-conteudo mt-8"><RelatorioMarkdown conteudo={d.conteudo} /></div>
-          <p className="mt-10 hidden border-t border-border pt-4 text-xs text-foreground-subtle print:block">
-            Este relatório foi gerado por inteligência artificial a partir das respostas do questionário e é um
-            diagnóstico inicial.
-          </p>
-        </article>
+      <main className="min-h-screen bg-background print:bg-white">
+        <RelatorioCupola
+          conteudo={d.conteudo}
+          nome={d.nome}
+          local={[d.cidade, d.estado].filter(Boolean).join("/")}
+          geradoEm={d.geradoEm}
+          numeros={d.numeros}
+          acoes={
+            <Button onClick={() => window.print()}>
+              <Download /> Baixar PDF
+            </Button>
+          }
+        />
+        <p className="mx-auto max-w-5xl px-5 pb-12 text-[13px] text-foreground-subtle sm:px-8">
+          Este relatório foi gerado com apoio de inteligência artificial a partir das respostas do questionário, passou
+          por revisão automática de qualidade e é um diagnóstico inicial.
+        </p>
       </main>
     );
   }
 
   if (d.statusRelatorio === "erro" || d.statusDiagnostico === "erro_geracao") {
     return (
-      <Centro
+      <Tela
         titulo="Tivemos um problema ao gerar o relatório"
         texto={erroAcao ?? "Suas respostas estão salvas. Você pode tentar novamente."}
       >
         <Button
-          className="mt-6"
+          size="lg"
+          className="mt-8"
           onClick={async () => {
             setErroAcao(null);
             try {
@@ -110,57 +110,73 @@ function Relatorio() {
         >
           Tentar novamente
         </Button>
-      </Centro>
+      </Tela>
     );
   }
 
-  if (d.statusRelatorio === "gerando") {
-    return (
-      <Centro
-        titulo="Estamos escrevendo o seu diagnóstico"
-        texto="Escrevemos e revisamos o diagnóstico com base nas suas respostas. Isso leva de 5 a 8 minutos. Pode deixar esta página aberta: ela atualiza sozinha."
-        animar
-      />
-    );
-  }
+  if (d.statusRelatorio === "gerando") return <Espera iniciadoEm={d.iniciadoEm} />;
 
   return (
-    <Centro titulo="Relatório ainda não disponível" texto="Conclua o questionário para gerar o relatório.">
-      <Link to="/formulario/$codigo" params={{ codigo }} className="mt-6 inline-block text-sm underline">
+    <Tela titulo="Relatório ainda não disponível" texto="Conclua o questionário para gerar o relatório.">
+      <Link to="/formulario/$codigo" params={{ codigo }} className="mt-8 inline-block text-sm text-foreground-on-dark underline">
         Ir para o questionário
       </Link>
-    </Centro>
+    </Tela>
   );
 }
 
-function Centro({
-  titulo,
-  texto,
-  animar,
-  children,
-}: {
-  titulo: string;
-  texto?: string;
-  animar?: boolean;
-  children?: React.ReactNode;
-}) {
+/** Etapas reais do processo; o tempo decorrido mostra que a página segue viva. */
+function Espera({ iniciadoEm }: { iniciadoEm: string | null }) {
+  const [agora, setAgora] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setAgora(Date.now()), 15_000);
+    return () => clearInterval(t);
+  }, []);
+  const minutos = iniciadoEm ? Math.max(0, Math.floor((agora - new Date(iniciadoEm).getTime()) / 60_000)) : 0;
+  const etapas = [
+    { texto: "Respostas recebidas", feita: true },
+    { texto: "Indicadores e projeção da carteira calculados", feita: true },
+    { texto: "Escrevendo a análise com o Método CUPOLA e revisando a qualidade", feita: false },
+  ];
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="max-w-lg text-center">
-        {animar && (
-          <div className="mx-auto mb-6 flex justify-center gap-2">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="size-3 animate-bounce rounded-full bg-primary"
-                style={{ animationDelay: `${i * 150}ms` }}
-              />
-            ))}
-          </div>
-        )}
-        <h1 className="text-[28px] leading-[34px] font-bold text-foreground">{titulo}</h1>
-        {texto && <p className="mt-3 text-base text-foreground-muted">{texto}</p>}
-        {children}
+    <Tela titulo="Estamos preparando o seu diagnóstico">
+      <ol className="mt-8 grid gap-3 text-left">
+        {etapas.map((e) => (
+          <li
+            key={e.texto}
+            className={`grid grid-cols-[28px_1fr] items-center gap-3 text-[15px] ${e.feita ? "text-foreground-on-dark" : "font-semibold text-foreground-on-dark"}`}
+          >
+            {e.feita ? (
+              <span className="grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Check className="size-4" />
+              </span>
+            ) : (
+              <span className="grid size-7 place-items-center rounded-full ring-2 ring-primary ring-inset">
+                <span className="size-2 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />
+              </span>
+            )}
+            {e.texto}
+          </li>
+        ))}
+      </ol>
+      <p className="mt-8 text-[14px] text-[#9ea2a8]">
+        Leva de 5 a 8 minutos{minutos > 0 ? ` (${minutos} min até agora)` : ""}. Pode deixar esta página aberta: ela atualiza
+        sozinha.
+      </p>
+    </Tela>
+  );
+}
+
+function Tela({ titulo, texto, children }: { titulo: string; texto?: string; children?: React.ReactNode }) {
+  return (
+    <main className="flex min-h-screen flex-col bg-dark-background px-6 py-8 text-foreground-on-dark">
+      <img src="/brand/cupola-consultoria-branca.png" alt="CUPOLA consultoria" className="h-7 w-auto self-start" />
+      <div className="flex flex-1 items-center justify-center py-12">
+        <div className="w-full max-w-lg">
+          <h1 className="titulo-marca text-[22px] sm:text-[26px]">{titulo}</h1>
+          {texto && <p className="mt-4 text-base text-[#c9c6be]">{texto}</p>}
+          {children}
+        </div>
       </div>
     </main>
   );

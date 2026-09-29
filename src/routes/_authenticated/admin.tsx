@@ -91,7 +91,7 @@ function Admin() {
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         {(erros.data?.length ?? 0) > 0 && (
-          <section className="mb-6 rounded-[10px] border border-destructive bg-destructive/10 p-4">
+          <section className="mb-6 rounded-2xl border border-destructive bg-destructive/10 p-4">
             <p className="font-semibold text-destructive">
               {erros.data!.length} geração(ões) com erro nas últimas 24h
             </p>
@@ -107,8 +107,8 @@ function Admin() {
             </ul>
           </section>
         )}
-        <section className="rounded-[10px] border border-border bg-card p-6">
-          <h1 className="text-xl font-bold text-foreground">Novo diagnóstico</h1>
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h1 className="titulo-marca text-[20px]">Novo diagnóstico</h1>
           <p className="mt-1 text-sm text-foreground-muted">
             Cadastre a imobiliária e envie o código gerado para o cliente.
           </p>
@@ -157,7 +157,7 @@ function Admin() {
             />
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-[10px] border border-border bg-card">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
             {isLoading ? (
               <p className="p-6 text-sm text-foreground-muted">Carregando...</p>
             ) : error ? (

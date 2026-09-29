@@ -100,8 +100,8 @@ function Usuarios() {
       <AdminNav />
 
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <section className="rounded-[10px] border border-border bg-card p-6">
-          <h1 className="text-xl font-bold text-foreground">Novo administrador</h1>
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h1 className="titulo-marca text-[20px]">Novo administrador</h1>
           <p className="mt-1 text-sm text-foreground-muted">
             Informe o e-mail e uma senha inicial. Se a pessoa já tiver conta, a senha é atualizada e
             o acesso ao painel é liberado.
@@ -138,7 +138,7 @@ function Usuarios() {
 
         <section className="mt-8">
           <h2 className="text-lg font-bold text-foreground">Administradores</h2>
-          <div className="mt-4 overflow-hidden rounded-[10px] border border-border bg-card">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
             {isLoading ? (
               <p className="p-6 text-sm text-foreground-muted">Carregando...</p>
             ) : error ? (
@@ -191,7 +191,7 @@ function Usuarios() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-[10px] border border-border bg-card p-6">
+        <section className="mt-8 rounded-2xl border border-border bg-card p-6">
           <h2 className="text-lg font-bold text-foreground">Alterar minha senha</h2>
           <p className="mt-1 text-sm text-foreground-muted">
             Informe a senha atual e escolha uma nova senha com pelo menos 8 caracteres.

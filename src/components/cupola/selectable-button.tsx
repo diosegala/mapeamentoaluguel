@@ -15,10 +15,10 @@ export function SelectableButton({
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "rounded-[10px] border px-4 py-3 text-left text-[15px] font-medium transition-colors",
+        "rounded-full border px-5 py-2.5 text-left text-[15px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-card text-foreground hover:bg-card-hover",
+          ? "border-foreground bg-foreground font-semibold text-primary"
+          : "border-input bg-card text-foreground hover:border-foreground",
       )}
     >
       {label}

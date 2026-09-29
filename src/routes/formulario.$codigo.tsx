@@ -82,7 +82,7 @@ function Formulario() {
   if (q.error)
     return (
       <Mensagem titulo="Não foi possível abrir" texto={(q.error as Error).message}>
-        <Link to="/" className="mt-6 inline-flex h-11 items-center rounded-[10px] bg-primary px-5 text-sm font-semibold text-primary-foreground">
+        <Link to="/" className="mt-8 inline-flex h-12 items-center rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground">
           Voltar ao início
         </Link>
       </Mensagem>
@@ -134,20 +134,35 @@ function Formulario() {
     }
   }
 
-  return (
-    <main className="min-h-screen bg-background px-6 py-10">
-      <div className="mx-auto max-w-2xl">
-        <p className="text-[13px] font-semibold text-foreground-subtle">
-          {q.data.nome} · Seção {indice + 1} de {secoes.length}
-        </p>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-card">
-          <div className="h-full bg-primary transition-all" style={{ width: `${((indice + 1) / secoes.length) * 100}%` }} />
-        </div>
-        <h1 className="mt-6 text-[30px] leading-[36px] font-bold text-foreground">{q.data.nomesSecoes?.[secao] ?? NOMES_SECOES[secao] ?? `Seção ${secao}`}</h1>
+  const nomeSecao = (n: number) => q.data!.nomesSecoes?.[n] ?? NOMES_SECOES[n] ?? `Seção ${n}`;
 
-        <div className="mt-8 space-y-8">
+  return (
+    <main className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-6 py-4">
+          <img src="/brand/cupola-consultoria.png" alt="CUPOLA consultoria" className="h-7 w-auto" />
+          <span className="text-[13px] font-semibold text-foreground-subtle">{q.data.nome}</span>
+        </div>
+      </header>
+      <div className="mx-auto max-w-3xl px-6 py-10">
+        <ol className="grid gap-2" style={{ gridTemplateColumns: `repeat(${secoes.length}, minmax(0, 1fr))` }} aria-label="Progresso">
+          {secoes.map((n, i) => (
+            <li key={n} className="grid gap-2" aria-current={i === indice ? "step" : undefined}>
+              <span className={`h-1.5 rounded-full ${i < indice ? "bg-foreground" : i === indice ? "bg-primary" : "bg-border"}`} />
+              <span className={`hidden truncate text-[12px] font-semibold sm:block ${i === indice ? "text-foreground" : "text-foreground-subtle"}`}>
+                {nomeSecao(n)}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-6 text-[13px] font-semibold text-foreground-subtle">
+          Bloco {indice + 1} de {secoes.length}
+        </p>
+        <h1 className="titulo-marca mt-2 text-[22px] sm:text-[28px]">{nomeSecao(secao)}</h1>
+
+        <div className="mt-8 space-y-6">
           {perguntas.map((p) => (
-            <div key={p.chave}>
+            <div key={p.chave} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
               <label className="block text-[16px] font-semibold text-foreground">
                 {p.texto}
                 {p.obrigatoria && <span className="text-destructive"> *</span>}
@@ -161,12 +176,12 @@ function Formulario() {
         </div>
 
         {erro && <p className="mt-6 text-sm text-destructive">{erro}</p>}
-        <div className="mt-10 flex justify-between gap-3">
-          <Button variant="outline" disabled={indice === 0 || salvando} onClick={() => setIndice(indice - 1)}>
-            Voltar
+        <div className="mt-10 flex items-center justify-between gap-3">
+          <Button variant="ghost" disabled={indice === 0 || salvando} onClick={() => setIndice(indice - 1)}>
+            ← Voltar
           </Button>
           <Button size="lg" disabled={salvando} onClick={avancar}>
-            {salvando ? "Salvando..." : ultima ? "Gerar Mapeamento" : "Continuar"}
+            {salvando ? "Salvando..." : ultima ? "Gerar diagnóstico" : "Próximo bloco"}
           </Button>
         </div>
       </div>
@@ -193,7 +208,7 @@ function Campo({
   if (p.tipo === "escolha_unica") {
     return (
       <>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="flex flex-wrap gap-2">
           {opcoes.map((o) => (
             <SelectableButton key={o} label={o} selected={valor === o} onClick={() => set(p.chave, o)} />
           ))}
@@ -212,7 +227,7 @@ function Campo({
     };
     return (
       <>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="flex flex-wrap gap-2">
           {opcoes.map((o) => (
             <SelectableButton key={o} label={o} selected={atual.includes(o)} onClick={() => alternar(o)} />
           ))}
@@ -246,11 +261,14 @@ function Campo({
 
 function Mensagem({ titulo, texto, children }: { titulo: string; texto?: string; children?: React.ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="max-w-lg text-center">
-        <h1 className="text-[28px] leading-[34px] font-bold text-foreground">{titulo}</h1>
-        {texto && <p className="mt-3 text-base text-foreground-muted">{texto}</p>}
-        {children}
+    <main className="flex min-h-screen flex-col bg-dark-background px-6 py-8 text-foreground-on-dark">
+      <img src="/brand/cupola-consultoria-branca.png" alt="CUPOLA consultoria" className="h-7 w-auto self-start" />
+      <div className="flex flex-1 items-center justify-center py-12">
+        <div className="w-full max-w-lg">
+          <h1 className="titulo-marca text-[22px] sm:text-[26px]">{titulo}</h1>
+          {texto && <p className="mt-4 text-base text-[#c9c6be]">{texto}</p>}
+          {children}
+        </div>
       </div>
     </main>
   );

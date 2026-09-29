@@ -30,8 +30,11 @@ export function AdminNav() {
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-5">
-          <Link to="/" className="text-[15px] font-bold text-foreground">
-            CUPOLA · Painel
+          <Link to="/admin" className="flex items-center gap-3">
+            <img src="/brand/cupola-consultoria.png" alt="CUPOLA consultoria" className="h-7 w-auto" />
+            <span className="rounded-full bg-foreground px-2.5 py-0.5 text-[11px] font-semibold tracking-[0.12em] text-primary uppercase">
+              Painel
+            </span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             {itens.map((i) => (

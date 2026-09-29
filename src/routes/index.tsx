@@ -26,10 +26,10 @@ export const Route = createFileRoute("/")({
 });
 
 const pilares = [
-  { icon: BarChart3, titulo: "Perfil da Imobiliária", texto: "Carteira, estoque, locações, receitas e porte da operação." },
-  { icon: Users, titulo: "Gestão Estratégica", texto: "Estratégia do negócio, gestão de pessoas, marketing e uso de IA." },
-  { icon: Workflow, titulo: "Gestão Comercial", texto: "Captação de imóveis, geração de leads e atendimento ao cliente." },
-  { icon: MonitorCog, titulo: "Gestão Administrativa e Financeira", texto: "Contratos, garantias, inadimplência, sistemas e rotinas." },
+  { icon: BarChart3, titulo: "Perfil da imobiliária", texto: "Carteira, estoque, locações e receitas." },
+  { icon: Users, titulo: "Gestão Estratégica", texto: "Pessoas, marketing, liderança e uso de IA." },
+  { icon: Workflow, titulo: "Gestão Comercial", texto: "Captação de imóveis, leads e atendimento." },
+  { icon: MonitorCog, titulo: "Gestão Administrativa e Financeira", texto: "Contratos, cobrança, sistemas e rotinas." },
 ];
 
 function Home() {
@@ -39,67 +39,65 @@ function Home() {
   const codigoLimpo = codigo.trim().toUpperCase();
 
   return (
-    <main className="min-h-screen bg-background">
-      <section className="mx-auto max-w-5xl px-6 pt-20 pb-12">
-        <span className="inline-flex items-center rounded-[40px] bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground">
-          Imersão Cupola Aluguel
-        </span>
-        <h1 className="mt-6 text-[40px] leading-[44px] font-bold tracking-tight text-foreground md:text-[50px] md:leading-[54px]">
-          Diagnóstico da sua operação de locação
+    <main className="flex min-h-screen flex-col bg-dark-background text-foreground-on-dark">
+      <header className="mx-auto w-full max-w-5xl px-6 pt-8">
+        <img src="/brand/cupola-consultoria-branca.png" alt="CUPOLA consultoria" className="h-8 w-auto" />
+      </header>
+
+      <section className="mx-auto w-full max-w-5xl flex-1 px-6 pt-16 pb-14">
+        <span className="text-[12px] font-bold tracking-[0.16em] text-primary uppercase">Imersão Cupola Aluguel</span>
+        <h1 className="titulo-marca mt-5 max-w-4xl text-[30px] sm:text-[44px]">
+          Diagnóstico da sua <span className="text-primary">operação de locação</span>
         </h1>
-        <p className="mt-5 max-w-2xl text-base leading-6 text-foreground-muted">
-          Um mapeamento estruturado da sua gestão estratégica, comercial, administrativa e
-          financeira, com o uso de inteligência artificial atravessando todos os pilares. Ao final,
-          você recebe um relatório com a leitura da CUPOLA sobre onde estão os gargalos e quais são
-          os próximos passos.
+        <p className="mt-6 max-w-2xl text-[17px] leading-[1.6] text-[#c9c6be]">
+          Responda ao mapeamento da sua gestão estratégica, comercial, administrativa e financeira. Ao final, você recebe
+          a leitura da CUPOLA sobre onde estão os gargalos e o que atacar primeiro.
         </p>
 
         <form
-          className="mt-10 max-w-xl rounded-[10px] border border-border bg-card p-6"
+          className="mt-10 grid max-w-xl gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             if (!codigoLimpo) return;
             navigate({ to: "/formulario/$codigo", params: { codigo: codigoLimpo } });
           }}
         >
-          <label htmlFor="codigo" className="text-[13px] font-semibold text-foreground">
+          <label htmlFor="codigo" className="text-[14px] font-semibold">
             Código do diagnóstico
           </label>
-          <p className="mt-1 text-sm text-foreground-subtle">
-            Use o código que você recebeu da CUPOLA para iniciar ou retomar o preenchimento.
-          </p>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Input
               id="codigo"
               value={codigo}
               onChange={(event) => setCodigo(event.target.value.toUpperCase())}
-              placeholder="EX: K7QM2P"
+              placeholder="EX: K7QM2P9X"
               maxLength={8}
-              className="h-12 tracking-[0.2em] uppercase"
+              className="h-12 rounded-full border-[#3a3f47] bg-[#171a1f] px-5 font-bold tracking-[0.25em] text-foreground-on-dark uppercase placeholder:text-[#6b7078] placeholder:tracking-[0.1em]"
             />
-            <Button type="submit" size="lg" className="h-12 px-6" disabled={!codigoLimpo}>
+            <Button type="submit" size="lg" disabled={!codigoLimpo}>
               Começar
-              <ArrowRight className="ml-2 size-4" />
+              <ArrowRight />
             </Button>
           </div>
+          <p className="text-[13px] text-[#9ea2a8]">
+            Use o código que você recebeu da CUPOLA para iniciar ou retomar o preenchimento.
+          </p>
         </form>
-      </section>
 
-      <section className="border-t border-border bg-background-secondary">
-        <div className="mx-auto grid max-w-5xl gap-4 px-6 py-14 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {pilares.map((pilar) => (
-            <div key={pilar.titulo} className="rounded-[10px] border border-border bg-card p-5">
-              <pilar.icon className="size-5 text-foreground" />
-              <h2 className="mt-3 text-lg font-semibold text-foreground">{pilar.titulo}</h2>
-              <p className="mt-1 text-sm leading-5 text-foreground-muted">{pilar.texto}</p>
+            <div key={pilar.titulo} className="grid content-start gap-2 rounded-2xl bg-[#171a1f] p-5">
+              <pilar.icon className="size-5 text-primary" />
+              <h2 className="text-[16px] font-semibold">{pilar.titulo}</h2>
+              <p className="text-[14px] leading-[1.5] text-[#9ea2a8]">{pilar.texto}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-10 text-[13px] text-foreground-subtle">
-        <span>CUPOLA — Método de gestão para imobiliárias.</span>
-        <Link to="/auth" className="font-semibold underline">
+      <footer className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-dark-border px-6 py-8 text-[13px] text-[#9ea2a8]">
+        <span>CUPOLA consultoria · Método de gestão para imobiliárias</span>
+        <Link to="/auth" className="font-semibold text-foreground-on-dark underline">
           Acesso CUPOLA
         </Link>
       </footer>

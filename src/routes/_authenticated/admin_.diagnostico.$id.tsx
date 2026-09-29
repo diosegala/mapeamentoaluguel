@@ -73,7 +73,7 @@ function Detalhe() {
           <>
             <header className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-[28px] font-bold text-foreground">{d.nome_imobiliaria}</h1>
+                <h1 className="titulo-marca text-[24px]">{d.nome_imobiliaria}</h1>
                 <p className="text-sm text-foreground-muted">
                   {d.cidade}/{d.estado} · código <strong className="tracking-[0.15em]">{d.codigo}</strong> · {d.status}
                 </p>
@@ -110,7 +110,7 @@ function Detalhe() {
             </header>
 
             {mostrarEmail && (
-              <section className="flex flex-wrap items-center gap-3 rounded-[10px] border border-border bg-card p-4">
+              <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
                 <Input
                   type="email"
                   placeholder="Vazio = e-mail do questionário"
@@ -130,7 +130,7 @@ function Detalhe() {
               </section>
             )}
 
-            <section className="rounded-[10px] border border-border bg-card p-6">
+            <section className="rounded-2xl border border-border bg-card p-6">
               <h2 className="mb-4 text-[18px] font-bold">Versões do relatório</h2>
               {q.data!.relatorios.length === 0 && <p className="text-sm text-foreground-muted">Nenhum relatório ainda.</p>}
               <ul className="space-y-2 text-sm">
@@ -147,7 +147,7 @@ function Detalhe() {
                         {r.erro && <span className="text-destructive">{r.erro}</span>}
                       </div>
                       {revisao && (
-                        <details className="rounded-[10px] bg-background-secondary px-3 py-2">
+                        <details className="rounded-2xl bg-background-secondary px-3 py-2">
                           <summary className="cursor-pointer text-foreground-muted">
                             Revisão automática: {ROTULOS_VEREDITO[revisao.veredito] ?? revisao.veredito}
                             {revisao.correcoes_aplicadas > 0 && ` (${revisao.correcoes_aplicadas} correções)`}
@@ -164,7 +164,7 @@ function Detalhe() {
             </section>
 
             {ultimo?.conteudo && (
-              <section className="rounded-[10px] border border-border bg-card p-6">
+              <section className="rounded-2xl border border-border bg-card p-6">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-[18px] font-bold">Revisão de qualidade (v{ultimo.versao})</h2>
@@ -177,7 +177,7 @@ function Detalhe() {
                       value={modeloAuditoria}
                       onChange={(e) => setModeloAuditoria(e.target.value)}
                       disabled={auditoria.isPending}
-                      className="h-9 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground"
+                      className="h-9 rounded-2xl border border-border bg-card px-3 text-sm text-foreground"
                       aria-label="Modelo da revisão"
                     >
                       {MODELOS_AUDITORIA.map((m) => (
@@ -202,14 +202,14 @@ function Detalhe() {
             )}
 
             {ultimo?.conteudo && (
-              <section className="rounded-[10px] border border-border bg-card p-6">
+              <section className="rounded-2xl border border-border bg-card p-6">
                 <h2 className="mb-4 text-[18px] font-bold">Relatório (v{ultimo.versao})</h2>
                 <AvisoIa />
                 <div className="mt-6"><RelatorioMarkdown conteudo={ultimo.conteudo} /></div>
               </section>
             )}
 
-            <section className="rounded-[10px] border border-border bg-card p-6">
+            <section className="rounded-2xl border border-border bg-card p-6">
               <h2 className="mb-4 text-[18px] font-bold">Respostas</h2>
               <dl className="space-y-3 text-sm">
                 {q.data!.perguntas.filter((p) => p.chave in respostas).map((p) => (

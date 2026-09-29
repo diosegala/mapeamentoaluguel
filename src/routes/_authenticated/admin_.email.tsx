@@ -124,7 +124,7 @@ function PaginaEmail() {
       <AdminNav />
       <div className="mx-auto max-w-6xl space-y-10 px-6 py-10">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">E-mail do relatório</h1>
+          <h1 className="titulo-marca text-[20px]">E-mail do relatório</h1>
           <p className="mt-1 text-sm text-foreground-muted">
             Enviado ao cliente quando o relatório fica pronto, usando o nome e e-mail informados no questionário.
           </p>

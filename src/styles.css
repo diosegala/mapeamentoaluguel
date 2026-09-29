@@ -19,7 +19,8 @@
  */
 
 @theme inline {
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Funnel Display", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Boldonse", "Arial Black", Impact, sans-serif;
   --color-primary-hover: var(--primary-hover);
   --color-background-secondary: var(--background-secondary);
   --color-foreground-muted: var(--foreground-muted);
@@ -73,58 +74,59 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  /* Identidade CUPOLA (cupola.com.br): grafite, lima, areia e papel. */
+  --radius: 1rem;
 
-  --primary: #b0f907;
-  --primary-hover: #9de006;
-  --primary-foreground: #0a0a0a;
+  --primary: #b0f90a;
+  --primary-hover: #9fe000;
+  --primary-foreground: #0f1114;
 
-  --background: #ffffff;
-  --background-secondary: #f5f5f5;
+  --background: #faf7f1;
+  --background-secondary: #f5f2eb;
 
-  --foreground: #171717;
-  --foreground-muted: #565656;
-  --foreground-subtle: #959595;
-  --foreground-on-dark: #ffffff;
+  --foreground: #0f1114;
+  --foreground-muted: #3a3f47;
+  --foreground-subtle: #6b7078;
+  --foreground-on-dark: #f5f2eb;
 
-  --border: #e3e3e3;
-  --input: #e3e3e3;
-  --ring: #b0f907;
+  --border: #e4dfd4;
+  --input: #d8d2c5;
+  --ring: #3d36ff;
   --card: #ffffff;
-  --card-foreground: #171717;
-  --card-hover: #f9fee7;
+  --card-foreground: #0f1114;
+  --card-hover: #f2fbd9;
   --popover: #ffffff;
-  --popover-foreground: #171717;
+  --popover-foreground: #0f1114;
 
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-  --muted: #f5f5f5;
-  --muted-foreground: #565656;
-  --accent: #f9fee7;
-  --accent-foreground: #171717;
+  --secondary: #f5f2eb;
+  --secondary-foreground: #0f1114;
+  --muted: #f5f2eb;
+  --muted-foreground: #3a3f47;
+  --accent: #f2fbd9;
+  --accent-foreground: #0f1114;
 
-  --destructive: #ef4444;
+  --destructive: #d92d20;
   --destructive-foreground: #ffffff;
-  --success: #22c55e;
+  --success: #2f9e44;
 
-  --dark-background: #171717;
+  --dark-background: #0f1114;
   --dark-background-darker: #000000;
-  --dark-border: #27272a;
+  --dark-border: #2a2e35;
 
-  --chart-1: #b0f907;
-  --chart-2: #565656;
-  --chart-3: #171717;
-  --chart-4: #22c55e;
-  --chart-5: #959595;
+  --chart-1: #b0f90a;
+  --chart-2: #3a3f47;
+  --chart-3: #0f1114;
+  --chart-4: #3d36ff;
+  --chart-5: #6b7078;
 
-  --sidebar: #171717;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #b0f907;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #b0f907;
+  --sidebar: #0f1114;
+  --sidebar-foreground: #f5f2eb;
+  --sidebar-primary: #b0f90a;
+  --sidebar-primary-foreground: #0f1114;
+  --sidebar-accent: #2a2e35;
+  --sidebar-accent-foreground: #f5f2eb;
+  --sidebar-border: #2a2e35;
+  --sidebar-ring: #b0f90a;
 }
 
 .dark {
@@ -170,95 +172,120 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
 }
 
+/* Títulos de marca: Boldonse em caixa-alta. É larga, então pede entrelinha generosa. */
+@utility titulo-marca {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
 /*
- * Versão de impressão (PDF) do relatório de diagnóstico.
- * Inspirada no "Panorama do Corretor Imobiliário 2026": capa própria,
- * seções numeradas, tabelas formatadas e rodapé com numeração de página.
+ * Versão de impressão (PDF) do relatório, gerada pelo navegador.
+ * Capa grafite de página inteira; páginas internas claras com cabeçalho e rodapé numerado.
  */
 @page {
   size: A4;
-  margin: 2cm 1.8cm;
-  @bottom-center {
-    content: "CUPOLA · Diagnóstico da Operação de Locação · pág. " counter(page);
-    font-size: 9px;
-    color: #959595;
+  margin: 18mm 16mm 20mm;
+  @top-right {
+    content: "Diagnóstico da Operação de Locação";
+    font-family: "Funnel Display", Arial, sans-serif;
+    font-size: 8pt;
+    color: #6b7078;
+  }
+  @bottom-left {
+    content: "CUPOLA consultoria";
+    font-family: "Funnel Display", Arial, sans-serif;
+    font-size: 8pt;
+    color: #6b7078;
+  }
+  @bottom-right {
+    content: counter(page);
+    font-family: "Funnel Display", Arial, sans-serif;
+    font-size: 8pt;
+    color: #6b7078;
+  }
+}
+
+@page :first {
+  margin: 0;
+  @top-right {
+    content: none;
+  }
+  @bottom-left {
+    content: none;
+  }
+  @bottom-right {
+    content: none;
   }
 }
 
 @media print {
+  html,
   body {
     background: #ffffff !important;
-    color: #171717 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .print-hidden {
     display: none !important;
   }
 
-  .relatorio-pdf {
-    max-width: none !important;
-    padding: 0 !important;
-  }
-
-  /* Capa */
   .relatorio-capa {
-    display: flex !important;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 24cm;
-    page-break-after: always;
-    text-align: left;
+    break-after: page;
   }
-  .relatorio-capa .capa-marca {
-    display: inline-block;
-    background: #b0f907;
-    color: #0a0a0a;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.2em;
-    padding: 6px 16px;
-    border-radius: 40px;
-    width: fit-content;
+  .relatorio-capa > div {
+    min-height: 297mm;
+    max-width: none !important;
+    justify-content: space-between;
+    padding: 20mm 18mm 24mm !important;
+  }
+  .relatorio-capa .capa-logo {
+    height: 10mm !important;
+  }
+  .relatorio-capa .capa-simbolo {
+    display: block !important;
+    width: 70mm;
+    align-self: flex-end;
   }
   .relatorio-capa h1 {
-    font-size: 34pt;
-    line-height: 1.15;
-    margin-top: 24px;
-  }
-  .relatorio-capa .capa-meta {
-    margin-top: 16px;
-    font-size: 12pt;
-    color: #565656;
+    font-size: 30pt !important;
   }
 
-  /* Conteúdo: seções numeradas e tabelas */
-  .relatorio-conteudo h2 {
-    page-break-after: avoid;
-    border-bottom: 2px solid #b0f907;
-    padding-bottom: 6px;
+  .relatorio-conteudo {
+    max-width: none !important;
+    padding: 0 !important;
+    gap: 8mm !important;
   }
-  .relatorio-conteudo h2,
-  .relatorio-conteudo h3 {
-    page-break-inside: avoid;
+  .destaques {
+    margin-top: 0 !important;
   }
-  .relatorio-conteudo table {
-    page-break-inside: avoid;
-    border-collapse: collapse;
+  .destaques > div,
+  .achado,
+  .prioridade,
+  .grafico-carteira,
+  .tabela-numeros tr {
+    break-inside: avoid;
   }
-  .relatorio-conteudo th {
-    background: #f5f5f5;
+  .secao-relatorio h2 {
+    break-after: avoid;
   }
-  .relatorio-conteudo blockquote {
-    border-left: 4px solid #b0f907;
-    background: #f9fee7;
-    padding: 10px 14px;
-    page-break-inside: avoid;
-  }
-  .relatorio-conteudo p,
-  .relatorio-conteudo li {
+  p,
+  li {
     orphans: 3;
     widows: 3;
   }

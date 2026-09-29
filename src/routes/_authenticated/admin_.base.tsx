@@ -155,13 +155,13 @@ function BaseConhecimento() {
       <AdminNav />
 
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <h1 className="text-xl font-bold text-foreground">Base de conhecimento</h1>
+        <h1 className="titulo-marca text-[20px]">Base de conhecimento</h1>
         <p className="mt-1 text-sm text-foreground-muted">
           Cole aqui os links dos diagnósticos de referência. Pode colar vários de uma vez, um por
           linha — não há limite de links.
         </p>
 
-        <section className="mt-6 rounded-[10px] border border-border bg-card p-6">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6">
           <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <label className="text-[13px] font-semibold text-foreground-muted">
@@ -240,7 +240,7 @@ function BaseConhecimento() {
                 return (
                   <div
                     key={d.id}
-                    className="rounded-[10px] border border-border bg-card px-4 py-3"
+                    className="rounded-2xl border border-border bg-card px-4 py-3"
                   >
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="min-w-0 flex-1 space-y-1">
@@ -363,7 +363,7 @@ function BaseConhecimento() {
                     ) : null}
 
                     {expandido ? (
-                      <div className="mt-3 space-y-3 rounded-[10px] bg-muted/40 p-4 text-[13px]">
+                      <div className="mt-3 space-y-3 rounded-2xl bg-muted/40 p-4 text-[13px]">
                         {d.resumo_ia ? (
                           <div>
                             <p className="font-semibold text-foreground">Resumo</p>

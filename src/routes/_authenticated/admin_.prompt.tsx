@@ -102,7 +102,7 @@ function PromptAgente() {
       <AdminNav />
 
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <h1 className="text-xl font-bold text-foreground">Prompt do consultor de IA</h1>
+        <h1 className="titulo-marca text-[20px]">Prompt do consultor de IA</h1>
         <p className="mt-1 text-sm text-foreground-muted">
           Estas são as instruções usadas para escrever o relatório. Cada gravação cria uma nova
           versão e passa a valer imediatamente.
@@ -116,7 +116,7 @@ function PromptAgente() {
           </p>
         ) : (
           <>
-            <section className="mt-6 rounded-[10px] border border-border bg-card p-6">
+            <section className="mt-6 rounded-2xl border border-border bg-card p-6">
               <h2 className="text-[15px] font-bold text-foreground">
                 Modelo usado para gerar o diagnóstico
               </h2>
@@ -139,8 +139,8 @@ function PromptAgente() {
                       }}
                       className={
                         escolhido
-                          ? "rounded-[10px] border border-primary bg-primary/10 p-4 text-left"
-                          : "rounded-[10px] border border-border bg-background p-4 text-left hover:bg-card-hover"
+                          ? "rounded-2xl border border-primary bg-primary/10 p-4 text-left"
+                          : "rounded-2xl border border-border bg-background p-4 text-left hover:bg-card-hover"
                       }
                     >
                       <p className="text-sm font-semibold text-foreground">
@@ -154,7 +154,7 @@ function PromptAgente() {
               </div>
             </section>
 
-            <div className="mt-6 rounded-[10px] border border-border bg-card p-6">
+            <div className="mt-6 rounded-2xl border border-border bg-card p-6">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-semibold text-foreground-muted">
                   {ativa ? `Versão ativa: ${ativa.versao}` : "Nenhuma versão ativa"}
@@ -193,7 +193,7 @@ function PromptAgente() {
                 {versoes.map((v) => (
                   <div
                     key={v.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-border bg-card px-4 py-3"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">

@@ -46,12 +46,10 @@ function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="w-full max-w-md rounded-[10px] border border-border bg-card p-8">
-        <Link to="/" className="text-[13px] font-semibold text-foreground-subtle">
-          ← Voltar ao início
-        </Link>
-        <h1 className="mt-4 text-2xl font-bold text-foreground">Painel CUPOLA</h1>
+    <main className="flex min-h-screen items-center justify-center bg-dark-background px-6">
+      <div className="w-full max-w-md rounded-2xl bg-card p-8">
+        <img src="/brand/cupola-consultoria.png" alt="CUPOLA consultoria" className="h-8 w-auto" />
+        <h1 className="titulo-marca mt-8 text-[20px]">Painel CUPOLA</h1>
         <p className="mt-2 text-sm text-foreground-muted">
           Entre com seu e-mail corporativo para gerenciar os diagnósticos.
         </p>
@@ -86,7 +84,7 @@ function AuthPage() {
               className="mt-2 h-11"
             />
           </div>
-          <Button type="submit" className="h-11 w-full" disabled={carregando}>
+          <Button type="submit" size="lg" className="w-full" disabled={carregando}>
             {carregando ? "Aguarde..." : "Entrar"}
           </Button>
         </form>
@@ -94,6 +92,9 @@ function AuthPage() {
         <p className="mt-5 text-[13px] text-foreground-subtle">
           Acessos são criados pela equipe CUPOLA na aba Administradores do painel.
         </p>
+        <Link to="/" className="mt-4 inline-block text-[13px] font-semibold text-foreground-muted underline">
+          ← Voltar ao início
+        </Link>
       </div>
     </main>
   );
