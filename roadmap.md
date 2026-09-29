@@ -15,3 +15,5 @@
 - [x] Versão PDF do relatório (impressão com capa, seções numeradas, rodapé)
 - [x] Primeiro teste ponta a ponta: identificada interrupção por limite de tokens; geração agora exige fim confirmado e continua respostas longas
 - [x] Nova geração completa do diagnóstico Cupolab confirmada: versão 2 concluída até as prioridades finais
+- [ ] Refinar prompt ativo e revisão: clareza, contas verificáveis, IA transversal, sem comparativos de mercado
+- [ ] Validar relatório gerado sem enviar e-mail de teste ao cliente

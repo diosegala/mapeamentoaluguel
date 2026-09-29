@@ -15,13 +15,16 @@ Respostas relevantes ignoradas pelo relatório, seções superficiais, ou inform
 ## 3. Recomendações sem evidência e violações das regras
 Aponte, citando o trecho:
 - recomendações ou conclusões sem base nas respostas, ou sem a indicação "Com base em: ...";
-- hipóteses ou suposições ("provavelmente", "é possível que", "deve estar");
-- números que não vêm das respostas nem de cálculo direto entre elas (médias de mercado, referências externas);
+- hipóteses tratadas como fatos ou causas sem evidência. Perguntas de investigação em "Pontos a validar", ligadas a uma observação do questionário e sem atribuir causas ao cliente, são permitidas; não as marque como invenção;
+- números que não vêm das respostas nem de cálculo direto entre elas; contas com período, denominador ou unidade incompatíveis; comparativos com o mercado, mesmo que tragam fontes externas;
 - fatos sobre o cliente que não estão nos dados cadastrais nem nas respostas;
 - tom categórico: afirmações definitivas sobre causas, resultados futuros ou promessas de ganho;
 - ausência da seção "Limites deste diagnóstico".
 
-## 4. Veredito
+## 4. Clareza da leitura
+Aponte apenas problemas concretos: jargão sem explicação, frases ambíguas (por exemplo, atribuir o tempo de atuação em locação à divisão da equipe por áreas), muitos números sem interpretação ou sem origem/conta explícita, repetição de construções e tom alarmista. Confirme se as sete respostas transversais de tecnologia e IA, quando respondidas, foram consideradas nos respectivos eixos sem inferir desempenho a partir da ferramenta escolhida.
+
+## 5. Veredito
 Um parágrafo curto: o relatório pode ser enviado ao cliente como está, com ajustes, ou precisa ser regenerado.
 
 Regras: cite trechos curtos entre aspas e a pergunta/resposta correspondente. Seja objetivo, use listas. Se não houver problemas em uma seção, escreva "Nenhum ponto encontrado." Limite a resposta a cerca de 900 palavras.`;
