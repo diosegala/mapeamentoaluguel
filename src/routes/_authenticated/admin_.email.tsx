@@ -38,6 +38,7 @@ type Modelo = {
   corpo: string;
   texto_botao: string;
   rodape: string;
+  emails_alerta: string;
 };
 
 const ROTULO_STATUS: Record<string, string> = {
@@ -83,6 +84,7 @@ function PaginaEmail() {
         corpo: resto.corpo,
         texto_botao: resto.texto_botao,
         rodape: resto.rodape,
+        emails_alerta: resto.emails_alerta ?? "",
       });
     }
   }, [q.data, m]);
@@ -142,6 +144,18 @@ function PaginaEmail() {
                   checked={m.envio_automatico}
                   onCheckedChange={(v) => setM({ ...m, envio_automatico: v })}
                 />
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-card p-4">
+                <Label>E-mails de alerta de erro</Label>
+                <Input
+                  placeholder="voce@cupola.com.br, outra@cupola.com.br"
+                  value={m.emails_alerta}
+                  onChange={campo("emails_alerta")}
+                />
+                <p className="text-xs text-foreground-muted">
+                  Recebem um aviso imediato quando a geração de um relatório falha. Vazio = todos os administradores.
+                </p>
               </div>
 
               <div className="rounded-lg border border-border bg-card p-4 text-sm">
