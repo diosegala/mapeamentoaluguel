@@ -17,3 +17,4 @@
 - [x] Nova geração completa do diagnóstico Cupolab confirmada: versão 2 concluída até as prioridades finais
 - [x] Refinar prompt ativo e revisão: clareza, contas verificáveis, IA transversal, sem comparativos de mercado
 - [ ] Validar relatório gerado sem enviar e-mail de teste ao cliente — depende de acesso administrativo ao Supabase externo; os diagnósticos existentes não contêm respostas às sete perguntas novas
+- [x] Projeção da carteira pela fórmula da planilha CUPOLA (cálculo no servidor, prompt v8, regras anti-genérico)
