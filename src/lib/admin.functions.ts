@@ -124,7 +124,13 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
 export const auditarRelatorioIa = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ id: z.string().uuid(), relatorioId: z.string().uuid() }).parse(data),
+    z
+      .object({
+        id: z.string().uuid(),
+        relatorioId: z.string().uuid(),
+        modelo: z.string().trim().max(80).optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
@@ -161,6 +167,7 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
       `# Dados cadastrais\n\n${cadastro}\n\n# Respostas do questionário\n\n${texto}`,
       rel.conteudo as string,
       { diagnosticoId: data.id, relatorioId: data.relatorioId },
+      data.modelo,
     );
   });
 
