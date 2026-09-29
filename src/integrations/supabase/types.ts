@@ -18,44 +18,44 @@ export type Database = {
         Row: {
           automatica: boolean
           correcoes_aplicadas: number
-          problemas: Json
-          resumo: string | null
-          veredito: string | null
           created_at: string
           diagnostico_id: string
           id: string
           modelo: string
+          problemas: Json
           relatorio_id: string | null
+          resumo: string | null
           tokens_entrada: number
           tokens_saida: number
+          veredito: string | null
         }
         Insert: {
           automatica?: boolean
           correcoes_aplicadas?: number
-          problemas?: Json
-          resumo?: string | null
-          veredito?: string | null
           created_at?: string
           diagnostico_id: string
           id?: string
           modelo: string
+          problemas?: Json
           relatorio_id?: string | null
+          resumo?: string | null
           tokens_entrada?: number
           tokens_saida?: number
+          veredito?: string | null
         }
         Update: {
           automatica?: boolean
           correcoes_aplicadas?: number
-          problemas?: Json
-          resumo?: string | null
-          veredito?: string | null
           created_at?: string
           diagnostico_id?: string
           id?: string
           modelo?: string
+          problemas?: Json
           relatorio_id?: string | null
+          resumo?: string | null
           tokens_entrada?: number
           tokens_saida?: number
+          veredito?: string | null
         }
         Relationships: [
           {
