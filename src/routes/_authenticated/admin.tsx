@@ -57,6 +57,15 @@ function Admin() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar."),
   });
 
+  const excluirMut = useMutation({
+    mutationFn: (id: string) => excluir({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Diagnóstico excluído.");
+      queryClient.invalidateQueries({ queryKey: ["diagnosticos"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
+  });
+
 
   type Linha = {
     id: string;
