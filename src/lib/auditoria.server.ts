@@ -1,6 +1,18 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const MODELO = "claude-haiku-4-5";
+const MODELO_PADRAO = "claude-haiku-4-5";
+
+export const MODELOS_AUDITORIA = [
+  { id: "claude-haiku-4-5", rotulo: "Claude Haiku 4.5 (rápido e barato)" },
+  { id: "claude-sonnet-5", rotulo: "Claude Sonnet 5 (mais profundo)" },
+] as const;
+
+export type ModeloAuditoria = (typeof MODELOS_AUDITORIA)[number]["id"];
+
+function modeloValido(modelo: string | undefined): ModeloAuditoria {
+  const encontrado = MODELOS_AUDITORIA.find((m) => m.id === modelo);
+  return encontrado ? encontrado.id : MODELO_PADRAO;
+}
 
 const INSTRUCOES = `Você é um auditor de qualidade da CUPOLA. Recebe os dados cadastrais da imobiliária, as respostas de um questionário de diagnóstico da operação de locação e o relatório gerado por IA a partir delas.
 Os dados cadastrais (nome, cidade, estado e contato) são fatos válidos informados pela imobiliária: nunca aponte como invenção uma informação que conste neles.
@@ -41,7 +53,9 @@ export async function auditarRelatorio(
   contexto: string,
   relatorio: string,
   registro: { diagnosticoId: string; relatorioId: string },
+  modeloEscolhido?: string,
 ) {
+  const modelo = modeloValido(modeloEscolhido);
   const chave = await chaveAnthropic();
   if (!chave) throw new Error("Chave da Anthropic não configurada. Cadastre-a na tela de API.");
 
