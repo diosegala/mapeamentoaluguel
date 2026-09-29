@@ -104,7 +104,7 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
-    const [{ data: diag, error }, { data: relatorios }, { data: perguntas }] = await Promise.all([
+    const [{ data: diag, error }, { data: relatorios }, { data: perguntas }, { data: revisoes }] = await Promise.all([
       context.supabase.from("diagnosticos").select("*").eq("id", data.id).single(),
       context.supabase
         .from("relatorios")
@@ -112,11 +112,18 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
         .eq("diagnostico_id", data.id)
         .order("versao", { ascending: false }),
       context.supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
+      context.supabase
+        .from("auditorias")
+        .select("id, relatorio_id, automatica, veredito, resumo, problemas, correcoes_aplicadas, created_at")
+        .eq("diagnostico_id", data.id)
+        .eq("automatica", true)
+        .order("created_at", { ascending: false }),
     ]);
     if (error || !diag) throw new Error("Diagnóstico não encontrado.");
     return {
       diagnostico: diag as any,
       relatorios: (relatorios ?? []) as any[],
+      revisoes: (revisoes ?? []) as any[],
       perguntas: (perguntas ?? []) as Array<{ chave: string; texto: string; secao: number }>,
     };
   });
@@ -162,22 +169,34 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
         .filter((k) => d[k])
         .map((k) => `- ${k.replace(/_/g, " ")}: ${d[k]}`),
     ].join("\n");
-    const { auditarRelatorio } = await import("./auditoria.server");
-    const { blocoProjecao, metasDoTexto, projetarCarteira } = await import("./projecao-carteira");
-    const projecao = blocoProjecao(
-      projetarCarteira({
-        carteira: respostas["imoveis_administrados"],
-        desocupacoes: respostas["desocupacoes_mes"],
-        captacoes: respostas["captacoes_mes"],
-        metas: metasDoTexto(respostas["meta_12_meses"]),
-      }),
-    );
-    return auditarRelatorio(
-      `# Dados cadastrais\n\n${cadastro}\n\n# Respostas do questionário\n\n${texto}${projecao ? `\n\n${projecao}` : ""}`,
-      rel.conteudo as string,
-      { diagnosticoId: data.id, relatorioId: data.relatorioId },
-      data.modelo,
-    );
+    const { revisarRelatorio, registrarRevisao } = await import("./auditoria.server");
+    const { chaveAnthropic } = await import("./anthropic.server");
+    const { blocosCalculados } = await import("./indicadores-operacao");
+    const { modeloAuditoriaValido, revisaoEmMarkdown } = await import("./auditoria-modelos");
+    const chave = await chaveAnthropic();
+    if (!chave) throw new Error("Chave da Anthropic não configurada. Cadastre-a na tela de API.");
+    const { projecao, indicadores } = blocosCalculados(respostas);
+    const contexto = [
+      `<imobiliaria>\n${cadastro}\n</imobiliaria>`,
+      `<respostas>\n${texto}\n</respostas>`,
+      ...(indicadores ? [`<indicadores>\n${indicadores}\n</indicadores>`] : []),
+      ...(projecao ? [`<projecao_carteira>\n${projecao}\n</projecao_carteira>`] : []),
+    ].join("\n\n");
+    const revisao = await revisarRelatorio({
+      chave,
+      modelo: modeloAuditoriaValido(data.modelo),
+      contexto,
+      relatorio: rel.conteudo as string,
+    });
+    await registrarRevisao({
+      diagnosticoId: data.id,
+      relatorioId: data.relatorioId,
+      revisao,
+      aplicadas: 0,
+      automatica: false,
+    });
+    if (revisao.veredito === "falhou") throw new Error(revisao.resumo);
+    return { conteudo: revisaoEmMarkdown(revisao), modelo: revisao.modelo };
   });
 
 export const regenerarRelatorio = createServerFn({ method: "POST" })

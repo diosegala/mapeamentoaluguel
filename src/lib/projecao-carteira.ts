@@ -17,7 +17,7 @@ export type ProjecaoCarteira = {
   metas: Array<{ meta: number; icca: number; captacoesMes: number }>;
 };
 
-function num(v: unknown): number | null {
+export function num(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;
   const n = typeof v === "number" ? v : Number(String(v).replace(/\./g, "").replace(",", "."));
   return Number.isFinite(n) ? n : null;
@@ -51,8 +51,8 @@ export function projetarCarteira(
   return { carteira, desocupacoes, captacoes, tdca, icca, trid, tcnc, fator, serie, crescimento: atual / carteira - 1, final: atual, metas };
 }
 
-const pct = (x: number, d = 1) => `${(x * 100).toFixed(d).replace(".", ",")}%`;
-const n1 = (x: number) => x.toFixed(1).replace(".", ",");
+export const pct = (x: number, d = 1) => `${(x * 100).toFixed(d).replace(".", ",")}%`;
+export const n1 = (x: number) => x.toFixed(1).replace(".", ",");
 
 export function blocoProjecao(p: ProjecaoCarteira | null): string {
   if (!p) return "";
@@ -63,6 +63,8 @@ export function blocoProjecao(p: ProjecaoCarteira | null): string {
     `- ICCA (índice de captação sobre a carteira) = ${p.captacoes} ÷ ${p.carteira} = ${pct(p.icca, 2)} ao mês.`,
     `- TRID (relocação dos imóveis desocupados) = ${pct(p.trid, 0)} e TCNC (captações que viram contrato) = ${pct(p.tcnc, 0)}: referências médias observadas pela CUPOLA.`,
     `- Fórmula mensal: carteira do mês = carteira anterior − carteira × TDCA + carteira × TDCA × TRID + carteira × ICCA × TCNC (fator mensal ${p.fator.toFixed(4).replace(".", ",")}).`,
+    `- Fluxo do primeiro mês em imóveis: desocupam ${p.desocupacoes}; desses, ${n1(p.desocupacoes * p.trid)} são relocados e ${n1(p.desocupacoes * (1 - p.trid))} saem da carteira. Das ${p.captacoes} captações, ${n1(p.captacoes * p.tcnc)} viram contrato novo e ${n1(p.captacoes * (1 - p.tcnc))} não entram na carteira.`,
+    `- Saldo mensal = relocados + contratos novos − desocupações = ${n1(p.desocupacoes * p.trid)} + ${n1(p.captacoes * p.tcnc)} − ${p.desocupacoes} = ${n1(p.desocupacoes * p.trid + p.captacoes * p.tcnc - p.desocupacoes)} imóveis por mês.`,
     `- Série (mês 0 a 12): ${p.serie.map(n1).join(" → ")}.`,
     `- Carteira projetada em 12 meses: ${n1(p.final)} imóveis; crescimento de ${pct(p.crescimento)} (${n1(p.final - p.carteira)} imóveis).`,
   ];

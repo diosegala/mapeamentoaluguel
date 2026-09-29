@@ -118,7 +118,7 @@ function Relatorio() {
     return (
       <Centro
         titulo="Estamos escrevendo o seu diagnóstico"
-        texto="Isso leva de 1 a 3 minutos. Pode deixar esta página aberta — ela atualiza sozinha."
+        texto="Escrevemos e revisamos o diagnóstico com base nas suas respostas. Isso leva de 5 a 8 minutos. Pode deixar esta página aberta: ela atualiza sozinha."
         animar
       />
     );

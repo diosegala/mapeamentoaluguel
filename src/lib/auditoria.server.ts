@@ -1,118 +1,131 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { modeloAuditoriaValido } from "@/lib/auditoria-modelos";
+import { chamarComRetry } from "@/lib/anthropic.server";
+import type { Problema, Revisao } from "@/lib/auditoria-modelos";
 
-const INSTRUCOES = `Você é um auditor de qualidade da CUPOLA. Recebe os dados cadastrais da imobiliária, as respostas de um questionário de diagnóstico da operação de locação e o relatório gerado por IA a partir delas.
-Os dados cadastrais (nome, cidade, estado e contato) são fatos válidos informados pela imobiliária: nunca aponte como invenção uma informação que conste neles.
-Sua tarefa é revisar o relatório com rigor e apontar, em português do Brasil, somente problemas reais, conferindo cada apontamento contra os dados cadastrais e as respostas antes de escrevê-lo:
+const INSTRUCOES = `Você é o revisor de qualidade da CUPOLA. Um relatório de diagnóstico da operação de locação de uma imobiliária foi escrito por IA e será enviado ao cliente sem leitura humana. Sua revisão é a última barreira antes do envio: encontre problemas reais e corrija cada um com uma substituição pontual.
 
-## 1. Inconsistências
-Afirmações do relatório que contradizem as respostas, números calculados errados, ou respostas do cliente que se contradizem entre si.
+Você recebe <imobiliaria>, <respostas>, <indicadores> e <projecao_carteira> (quando houver) e o <relatorio>. Dados cadastrais e respostas são fatos. Os números de <indicadores> e <projecao_carteira> são oficiais.
 
-## 2. Lacunas
-Respostas relevantes ignoradas pelo relatório, seções superficiais, ou informações que faltam no questionário e limitam o diagnóstico.
+# O que procurar
+- fato_inventado: afirmação sobre a imobiliária que não está nas respostas. Inclui ausências não informadas ("não tem backup", "não mede", "sem segmentação") e ligações entre respostas que o questionário não faz, como dizer que o líder é o dono ou qual ferramenta é usada em qual atividade quando isso foi perguntado em perguntas separadas.
+- numero_errado: número que diverge das respostas, de <indicadores> ou de <projecao_carteira>, ou conta errada.
+- causa_como_fato: causa afirmada como fato ("explica", "é a causa", "é o que faz") sem que as respostas a demonstrem.
+- comparacao_proibida: comparação com o mercado, com "a média", com outras imobiliárias ou com o porte ("raro", "pouco comum", "acima da média", "completo para o porte"). TRID, TCNC e parâmetros identificados como do Método CUPOLA são permitidos.
+- ponto_a_validar_omitido: item de "Pontos a validar com a imobiliária" em <indicadores> que não aparece em nenhuma parte do relatório.
+- estilo: travessão (—), a palavra "giro", tratamento por "você".
+- estrutura: seção obrigatória ausente (Leitura geral, Os números da operação, A carteira sustenta a meta?, Gestão Estratégica, Gestão Comercial, Gestão Administrativa e Financeira, Prontidão para IA, Prioridades, Limites deste diagnóstico), texto duplicado ou cortado.
 
-## 3. Recomendações sem evidência e violações das regras
-Aponte, citando o trecho:
-- recomendações ou conclusões sem base nas respostas, ou sem a indicação "Com base em: ...";
-- hipóteses tratadas como fatos ou causas sem evidência. Perguntas de investigação em "Pontos a validar", ligadas a uma observação do questionário e sem atribuir causas ao cliente, são permitidas; não as marque como invenção;
-- números que não vêm das respostas, de cálculo direto entre elas ou do bloco "Projeção da carteira (calculada pela CUPOLA)"; contas com período, denominador ou unidade incompatíveis; comparativos com o mercado (exceto TRID 60% e TCNC 30%, referências CUPOLA permitidas). Os números do bloco de projeção são oficiais: aponte divergência do relatório em relação a eles, nunca os marque como inventados;
-- recusas indevidas: dizer que um dado não foi informado ou que não é possível projetar quando o dado consta nas respostas ou no bloco;
-- texto genérico: parágrafos que explicam conceitos/metodologia ou frases que serviriam para qualquer imobiliária, sem citar número ou resposta do cliente;
-- fatos sobre o cliente que não estão nos dados cadastrais nem nas respostas;
-- tom categórico: afirmações definitivas sobre causas, resultados futuros ou promessas de ganho;
-- ausência da seção "Limites deste diagnóstico".
+Não são problemas: recomendações, práticas e parâmetros atribuídos ao Método CUPOLA (você não tem o método para conferir); leituras e interpretações apresentadas como tal; escolhas de redação fora da lista acima. Não aponte algo só porque poderia ser dito de outro jeito.
 
-## 4. Clareza da leitura
-Aponte apenas problemas concretos: jargão sem explicação, frases ambíguas (por exemplo, atribuir o tempo de atuação em locação à divisão da equipe por áreas), muitos números sem interpretação ou sem origem/conta explícita, repetição de construções e tom alarmista. Confirme se as sete respostas transversais de tecnologia e IA, quando respondidas, foram consideradas nos respectivos eixos sem inferir desempenho a partir da ferramenta escolhida.
+# Como corrigir
+- "trecho" é uma cópia exata, caractere por caractere, de um pedaço do relatório, inclusive asteriscos e pontuação. Deve ser curto, de preferência uma frase, e aparecer uma única vez no relatório.
+- "correcao" é o texto que substitui o trecho. Mude só o necessário e mantenha o tom e o formato. Para remover uma afirmação, reescreva a frase sem ela.
+- Para incluir um ponto a validar omitido, use como trecho a linha "## Limites deste diagnóstico" e como correção essa mesma linha, uma linha em branco e o novo item "- ...".
+- Para problemas de estrutura, deixe trecho e correção vazios.
 
-## 5. Veredito
-Um parágrafo curto: o relatório pode ser enviado ao cliente como está, com ajustes, ou precisa ser regenerado.
+# Veredito
+- "aprovado": nenhum problema.
+- "corrigir": os problemas se resolvem com as substituições.
+- "regenerar": só para problema de estrutura que substituições não resolvem, ou erros espalhados pela maior parte do texto.
+"resumo": uma ou duas frases sobre a qualidade do relatório.`;
 
-Regras: cite trechos curtos entre aspas e a pergunta/resposta correspondente. Seja objetivo, use listas. Se não houver problemas em uma seção, escreva "Nenhum ponto encontrado." Limite a resposta a cerca de 900 palavras.`;
+const CATEGORIAS = [
+  "fato_inventado",
+  "numero_errado",
+  "causa_como_fato",
+  "comparacao_proibida",
+  "ponto_a_validar_omitido",
+  "estilo",
+  "estrutura",
+];
 
-async function chaveAnthropic(): Promise<string | null> {
-  const doAmbiente = process.env["ANTHROPIC_API_KEY"] ?? "";
-  if (doAmbiente.length > 10) return doAmbiente;
-  const { data } = await supabaseAdmin.rpc("ler_segredo" as never, { p_nome: "ANTHROPIC_API_KEY" } as never);
-  const guardada = (data as string | null) ?? "";
-  return guardada.length > 10 ? guardada : null;
+const ESQUEMA = {
+  type: "object",
+  properties: {
+    veredito: { type: "string", enum: ["aprovado", "corrigir", "regenerar"] },
+    resumo: { type: "string" },
+    problemas: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          categoria: { type: "string", enum: CATEGORIAS },
+          trecho: { type: "string" },
+          correcao: { type: "string" },
+          motivo: { type: "string" },
+        },
+        required: ["categoria", "trecho", "correcao", "motivo"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["veredito", "resumo", "problemas"],
+  additionalProperties: false,
+};
+
+/** Revisa um relatório e devolve problemas com correções pontuais. Nunca lança: falhas viram veredito "falhou". */
+export async function revisarRelatorio(opcoes: {
+  chave: string;
+  modelo: string;
+  contexto: string;
+  relatorio: string;
+}): Promise<Revisao> {
+  const r = await chamarComRetry(opcoes.chave, {
+    model: opcoes.modelo,
+    max_tokens: 32_000,
+    stream: true,
+    system: INSTRUCOES,
+    output_config: { format: { type: "json_schema", schema: ESQUEMA } },
+    messages: [{ role: "user", content: `${opcoes.contexto}\n\n<relatorio>\n${opcoes.relatorio}\n</relatorio>` }],
+  });
+  const base = {
+    modelo: opcoes.modelo,
+    tokensEntrada: r.usage.input + r.usage.cacheCriacao + r.usage.cacheLeitura,
+    tokensSaida: r.usage.output,
+  };
+  if (!r.ok) return { ...base, veredito: "falhou", resumo: `Falha na revisão (${r.status}): ${r.erro}`, problemas: [] };
+  if (r.stop !== "end_turn")
+    return { ...base, veredito: "falhou", resumo: `Revisão interrompida (${r.stop ?? "sem motivo"}).`, problemas: [] };
+  try {
+    const j = JSON.parse(r.texto) as Pick<Revisao, "veredito" | "resumo" | "problemas">;
+    return { ...base, veredito: j.veredito, resumo: j.resumo, problemas: j.problemas ?? [] };
+  } catch {
+    return { ...base, veredito: "falhou", resumo: "A revisão retornou um formato inesperado.", problemas: [] };
+  }
 }
 
-export async function auditarRelatorio(
-  contexto: string,
-  relatorio: string,
-  registro: { diagnosticoId: string; relatorioId: string },
-  modeloEscolhido?: string,
-) {
-  const modelo = modeloAuditoriaValido(modeloEscolhido);
-  const chave = await chaveAnthropic();
-  if (!chave) throw new Error("Chave da Anthropic não configurada. Cadastre-a na tela de API.");
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": chave,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: modelo,
-      max_tokens: 4000,
-      stream: true,
-      system: INSTRUCOES,
-      messages: [{ role: "user", content: `${contexto}\n\n# Relatório gerado\n\n${relatorio}` }],
-    }),
-  });
-
-  if (!res.ok || !res.body) {
-    const corpo = await res.text().catch(() => "");
-    let msg = corpo;
-    try { msg = JSON.parse(corpo)?.error?.message ?? corpo; } catch { /* texto */ }
-    if (res.status === 401) throw new Error("Chave da Anthropic inválida.");
-    if (res.status === 429) throw new Error("Limite de requisições da Anthropic atingido. Tente novamente em instantes.");
-    throw new Error(`Falha na revisão (${res.status}): ${String(msg).slice(0, 300)}`);
+/** Aplica as substituições cujo trecho aparece exatamente uma vez no texto. */
+export function aplicarCorrecoes(texto: string, problemas: Problema[]) {
+  let aplicadas = 0;
+  for (const p of problemas) {
+    if (!p.trecho) continue;
+    const i = texto.indexOf(p.trecho);
+    if (i < 0 || texto.indexOf(p.trecho, i + 1) >= 0) continue;
+    texto = texto.slice(0, i) + p.correcao + texto.slice(i + p.trecho.length);
+    aplicadas++;
   }
+  return { texto, aplicadas };
+}
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let texto = "";
-  let erro: string | null = null;
-  let parada: string | null = null;
-  let entrada = 0;
-  let saida = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const linhas = buffer.split("\n");
-    buffer = linhas.pop() ?? "";
-    for (const linha of linhas) {
-      if (!linha.startsWith("data:")) continue;
-      const dado = linha.slice(5).trim();
-      if (!dado) continue;
-      try {
-        const ev = JSON.parse(dado);
-        if (ev.type === "message_start") entrada = ev.message?.usage?.input_tokens ?? 0;
-        else if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") texto += ev.delta.text ?? "";
-        else if (ev.type === "message_delta") {
-          parada = ev.delta?.stop_reason ?? parada;
-          saida = ev.usage?.output_tokens ?? saida;
-        } else if (ev.type === "error") erro = ev.error?.message ?? "Falha na revisão.";
-      } catch { /* ignora */ }
-    }
-  }
-
-  await supabaseAdmin.from("auditorias" as never).insert({
+export async function registrarRevisao(registro: {
+  diagnosticoId: string;
+  relatorioId: string;
+  revisao: Revisao;
+  aplicadas: number;
+  automatica: boolean;
+}) {
+  const { revisao } = registro;
+  const { error } = await supabaseAdmin.from("auditorias").insert({
     diagnostico_id: registro.diagnosticoId,
     relatorio_id: registro.relatorioId,
-    modelo,
-    tokens_entrada: entrada,
-    tokens_saida: saida,
+    modelo: revisao.modelo,
+    tokens_entrada: revisao.tokensEntrada,
+    tokens_saida: revisao.tokensSaida,
+    automatica: registro.automatica,
+    veredito: revisao.veredito,
+    resumo: revisao.resumo,
+    problemas: revisao.problemas,
+    correcoes_aplicadas: registro.aplicadas,
   } as never);
-
-  if (erro) throw new Error(erro);
-  if (parada === "refusal") throw new Error("O modelo recusou fazer esta revisão.");
-  if (!texto.trim()) throw new Error("O modelo não retornou conteúdo para a revisão.");
-  return { conteudo: texto, modelo };
+  if (error) console.error("registrar revisão", error.message);
 }

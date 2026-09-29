@@ -16,6 +16,11 @@ export type Database = {
     Tables: {
       auditorias: {
         Row: {
+          automatica: boolean
+          correcoes_aplicadas: number
+          problemas: Json
+          resumo: string | null
+          veredito: string | null
           created_at: string
           diagnostico_id: string
           id: string
@@ -25,6 +30,11 @@ export type Database = {
           tokens_saida: number
         }
         Insert: {
+          automatica?: boolean
+          correcoes_aplicadas?: number
+          problemas?: Json
+          resumo?: string | null
+          veredito?: string | null
           created_at?: string
           diagnostico_id: string
           id?: string
@@ -34,6 +44,11 @@ export type Database = {
           tokens_saida?: number
         }
         Update: {
+          automatica?: boolean
+          correcoes_aplicadas?: number
+          problemas?: Json
+          resumo?: string | null
+          veredito?: string | null
           created_at?: string
           diagnostico_id?: string
           id?: string
@@ -341,6 +356,7 @@ export type Database = {
       relatorios: {
         Row: {
           conteudo: string | null
+          conteudo_original: string | null
           created_at: string
           diagnostico_id: string
           documentos_usados: Json
@@ -358,6 +374,7 @@ export type Database = {
         }
         Insert: {
           conteudo?: string | null
+          conteudo_original?: string | null
           created_at?: string
           diagnostico_id: string
           documentos_usados?: Json
@@ -375,6 +392,7 @@ export type Database = {
         }
         Update: {
           conteudo?: string | null
+          conteudo_original?: string | null
           created_at?: string
           diagnostico_id?: string
           documentos_usados?: Json

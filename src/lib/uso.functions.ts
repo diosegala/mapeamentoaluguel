@@ -28,9 +28,11 @@ export const PRECOS: Record<string, { entrada: number; saida: number }> = {
 
 const PADRAO = { entrada: 3, saida: 15 };
 
-export function custoDe(modelo: string | null, entrada: number, saida: number) {
+/** Custo em dólares; escrita em cache custa 1,25x a entrada e leitura de cache, 0,1x. */
+export function custoDe(modelo: string | null, entrada: number, saida: number, cacheCriacao = 0, cacheLeitura = 0) {
   const p = (modelo && PRECOS[modelo]) || PADRAO;
-  return (entrada / 1_000_000) * p.entrada + (saida / 1_000_000) * p.saida;
+  const entradaEquivalente = entrada + cacheCriacao * 1.25 + cacheLeitura * 0.1;
+  return (entradaEquivalente / 1_000_000) * p.entrada + (saida / 1_000_000) * p.saida;
 }
 
 const NOME_SEGREDO = "ANTHROPIC_API_KEY";
@@ -105,7 +107,7 @@ export const listarUsoApi = createServerFn({ method: "GET" })
     let consulta = context.supabase
       .from("relatorios")
       .select(
-        "id, created_at, modelo, tokens_entrada, tokens_saida, status, diagnostico_id, diagnosticos(codigo, nome_imobiliaria)",
+        "id, created_at, modelo, tokens_entrada, tokens_saida, tokens_cache_criacao, tokens_cache_leitura, status, diagnostico_id, diagnosticos(codigo, nome_imobiliaria)",
       )
       .order("created_at", { ascending: false })
       .limit(1000);
@@ -129,7 +131,10 @@ export const listarUsoApi = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const mapear = (l: any, status: string) => {
-      const entrada = l.tokens_entrada ?? 0;
+      const cacheCriacao = l.tokens_cache_criacao ?? 0;
+      const cacheLeitura = l.tokens_cache_leitura ?? 0;
+      // Entrada exibida inclui os tokens servidos ou gravados em cache.
+      const entrada = (l.tokens_entrada ?? 0) + cacheCriacao + cacheLeitura;
       const saida = l.tokens_saida ?? 0;
       return {
         id: l.id as string,
@@ -138,7 +143,7 @@ export const listarUsoApi = createServerFn({ method: "GET" })
         status,
         entrada,
         saida,
-        custo: custoDe(l.modelo ?? null, entrada, saida),
+        custo: custoDe(l.modelo ?? null, l.tokens_entrada ?? 0, saida, cacheCriacao, cacheLeitura),
         cliente: l.diagnosticos?.nome_imobiliaria ?? "—",
         codigo: l.diagnosticos?.codigo ?? "—",
         diagnostico_id: l.diagnostico_id as string,

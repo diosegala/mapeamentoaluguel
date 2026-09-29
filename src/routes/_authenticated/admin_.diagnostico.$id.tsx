@@ -9,7 +9,7 @@ import { AvisoIa, RelatorioMarkdown } from "@/components/cupola/relatorio-markdo
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
-import { MODELOS_AUDITORIA } from "@/lib/auditoria-modelos";
+import { MODELOS_AUDITORIA, ROTULOS_VEREDITO, revisaoEmMarkdown } from "@/lib/auditoria-modelos";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -134,16 +134,32 @@ function Detalhe() {
               <h2 className="mb-4 text-[18px] font-bold">Versões do relatório</h2>
               {q.data!.relatorios.length === 0 && <p className="text-sm text-foreground-muted">Nenhum relatório ainda.</p>}
               <ul className="space-y-2 text-sm">
-                {q.data!.relatorios.map((r) => (
-                  <li key={r.id} className="flex flex-wrap gap-3">
-                    <strong>v{r.versao}</strong>
-                    <span>{r.status}</span>
-                    <span className="text-foreground-subtle">{new Date(r.created_at).toLocaleString("pt-BR")}</span>
-                    <span className="text-foreground-subtle">{r.modelo ?? ""}</span>
-                    {r.tokens_entrada != null && <span className="text-foreground-subtle">{r.tokens_entrada} / {r.tokens_saida} tokens</span>}
-                    {r.erro && <span className="text-destructive">{r.erro}</span>}
-                  </li>
-                ))}
+                {q.data!.relatorios.map((r) => {
+                  const revisao = q.data!.revisoes.find((a) => a.relatorio_id === r.id);
+                  return (
+                    <li key={r.id} className="space-y-1">
+                      <div className="flex flex-wrap gap-3">
+                        <strong>v{r.versao}</strong>
+                        <span>{r.status}</span>
+                        <span className="text-foreground-subtle">{new Date(r.created_at).toLocaleString("pt-BR")}</span>
+                        <span className="text-foreground-subtle">{r.modelo ?? ""}</span>
+                        {r.tokens_entrada != null && <span className="text-foreground-subtle">{r.tokens_entrada} / {r.tokens_saida} tokens</span>}
+                        {r.erro && <span className="text-destructive">{r.erro}</span>}
+                      </div>
+                      {revisao && (
+                        <details className="rounded-[10px] bg-background-secondary px-3 py-2">
+                          <summary className="cursor-pointer text-foreground-muted">
+                            Revisão automática: {ROTULOS_VEREDITO[revisao.veredito] ?? revisao.veredito}
+                            {revisao.correcoes_aplicadas > 0 && ` (${revisao.correcoes_aplicadas} correções)`}
+                          </summary>
+                          <div className="mt-2">
+                            <RelatorioMarkdown conteudo={revisaoEmMarkdown(revisao, revisao.correcoes_aplicadas)} />
+                          </div>
+                        </details>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
 
@@ -153,7 +169,7 @@ function Detalhe() {
                   <div>
                     <h2 className="text-[18px] font-bold">Revisão de qualidade (v{ultimo.versao})</h2>
                     <p className="text-sm text-foreground-muted">
-                      Revisão feita por IA: compara cadastro e respostas com o relatório e aponta inconsistências, lacunas e recomendações sem evidência.
+                      Todo relatório já passa pela revisão automática antes de ser publicado. Aqui é possível rodar o mesmo revisor de novo, com outro modelo, apenas para consulta: o relatório não é alterado.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
