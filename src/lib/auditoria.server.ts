@@ -15,7 +15,9 @@ Respostas relevantes ignoradas pelo relatório, seções superficiais, ou inform
 Aponte, citando o trecho:
 - recomendações ou conclusões sem base nas respostas, ou sem a indicação "Com base em: ...";
 - hipóteses tratadas como fatos ou causas sem evidência. Perguntas de investigação em "Pontos a validar", ligadas a uma observação do questionário e sem atribuir causas ao cliente, são permitidas; não as marque como invenção;
-- números que não vêm das respostas nem de cálculo direto entre elas; contas com período, denominador ou unidade incompatíveis; comparativos com o mercado, mesmo que tragam fontes externas;
+- números que não vêm das respostas, de cálculo direto entre elas ou do bloco "Projeção da carteira (calculada pela CUPOLA)"; contas com período, denominador ou unidade incompatíveis; comparativos com o mercado (exceto TRID 60% e TCNC 30%, referências CUPOLA permitidas). Os números do bloco de projeção são oficiais: aponte divergência do relatório em relação a eles, nunca os marque como inventados;
+- recusas indevidas: dizer que um dado não foi informado ou que não é possível projetar quando o dado consta nas respostas ou no bloco;
+- texto genérico: parágrafos que explicam conceitos/metodologia ou frases que serviriam para qualquer imobiliária, sem citar número ou resposta do cliente;
 - fatos sobre o cliente que não estão nos dados cadastrais nem nas respostas;
 - tom categórico: afirmações definitivas sobre causas, resultados futuros ou promessas de ganho;
 - ausência da seção "Limites deste diagnóstico".
