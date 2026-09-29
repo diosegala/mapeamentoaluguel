@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { criarDiagnostico, listarDiagnosticos } from "@/lib/admin.functions";
+import { criarDiagnostico, excluirDiagnostico, listarDiagnosticos } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
