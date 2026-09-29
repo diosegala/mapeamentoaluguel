@@ -32,6 +32,7 @@ function Admin() {
   const queryClient = useQueryClient();
   const listar = useServerFn(listarDiagnosticos);
   const criar = useServerFn(criarDiagnostico);
+  const excluir = useServerFn(excluirDiagnostico);
 
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
