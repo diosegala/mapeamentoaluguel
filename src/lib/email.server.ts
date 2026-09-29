@@ -171,3 +171,58 @@ export async function enviarRelatorioDiagnostico(opcoes: {
     return { ok: false, erro };
   }
 }
+
+function explicarErro(erro: string): string {
+  const e = erro.toLowerCase();
+  if (/\((524|504|599)\)|interrompida|sem conexão/.test(e)) return "A IA demorou demais para responder ou a conexão caiu.";
+  if (/\(529\)|overloaded/.test(e)) return "A Anthropic está sobrecarregada no momento.";
+  if (/\(429\)/.test(e)) return "Limite de uso da Anthropic atingido temporariamente.";
+  if (/\(401\)|chave/.test(e)) return "Chave da Anthropic ausente ou inválida.";
+  if (/\(402\)|credit|billing/.test(e)) return "Créditos insuficientes na conta Anthropic.";
+  if (/\(403\)|refusal|recusou/.test(e)) return "A IA recusou ou bloqueou o pedido.";
+  if (/\(404\)|model/.test(e)) return "Modelo de IA indisponível ou inválido.";
+  if (/\(400\)/.test(e)) return "Pedido inválido enviado à IA (prompt ou configuração).";
+  if (/interrompeu/.test(e)) return "A IA parou antes de terminar o relatório.";
+  if (/prompt ativo/.test(e)) return "Não há prompt ativo configurado.";
+  return "Erro inesperado na geração.";
+}
+
+/** Avisa os administradores por e-mail que uma geração falhou. */
+export async function notificarErroGeracao(opcoes: { diagnosticoId: string; relatorioId: string; erro: string }) {
+  const [{ data: diag }, { data: rel }, cfg] = await Promise.all([
+    supabaseAdmin.from("diagnosticos").select("id, codigo, nome_imobiliaria, cidade, estado").eq("id", opcoes.diagnosticoId).maybeSingle(),
+    supabaseAdmin.from("relatorios").select("versao").eq("id", opcoes.relatorioId).maybeSingle(),
+    lerConfigEmail(),
+  ]);
+  let destinos = String((cfg as any)?.emails_alerta ?? "")
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+  if (!destinos.length) {
+    const { data: papeis } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
+    for (const p of papeis ?? []) {
+      const { data } = await supabaseAdmin.auth.admin.getUserById(p.user_id);
+      if (data?.user?.email) destinos.push(data.user.email);
+    }
+  }
+  if (!destinos.length) return;
+  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
+  const link = `${base}/admin/diagnostico/${opcoes.diagnosticoId}`;
+  const quando = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const nome = diag?.nome_imobiliaria ?? "Diagnóstico";
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+<p style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#b91c1c">Alerta · Erro na geração</p>
+<h1 style="font-size:20px">${esc(nome)}: o relatório não foi gerado</h1>
+<p><b>Motivo:</b> ${esc(explicarErro(opcoes.erro))}</p>
+<p><b>Detalhe técnico:</b> ${esc(opcoes.erro)}</p>
+<p><b>Código:</b> ${esc(diag?.codigo ?? "-")} · <b>Versão:</b> ${rel?.versao ?? "-"} · <b>Cidade:</b> ${esc(diag ? `${diag.cidade}/${diag.estado}` : "-")}</p>
+<p><b>Quando:</b> ${quando}</p>
+<p><a href="${link}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none">Abrir no painel</a></p></div>`;
+  for (const para of destinos) {
+    try {
+      await enviarEmail({ para, assunto: `[Erro] Relatório de ${nome} não foi gerado`, html });
+    } catch (e) {
+      console.error("alerta de erro não enviado", para, (e as Error).message);
+    }
+  }
+}

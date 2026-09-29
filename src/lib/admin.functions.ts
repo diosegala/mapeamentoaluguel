@@ -206,3 +206,19 @@ export const enviarRelatorioPorEmail = createServerFn({ method: "POST" })
     if (!r.ok) throw new Error(r.erro ?? "Falha ao enviar.");
     return { ok: true };
   });
+
+export const errosRecentes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { data, error } = await context.supabase
+      .from("relatorios")
+      .select("id, erro, created_at, versao, diagnostico_id, diagnosticos(nome_imobiliaria, codigo, status)")
+      .eq("status", "erro")
+      .gte("created_at", desde)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as any[]).filter((r) => r.diagnosticos?.status === "erro_geracao");
+  });

@@ -36,6 +36,93 @@ function formatarValor(v: unknown): string {
   return String(v);
 }
 
+type ResultadoStream = {
+  ok: boolean;
+  status: number;
+  erro: string;
+  transitorio: boolean;
+  recebeuTexto: boolean;
+  texto: string;
+  stop: string | null;
+  usage: { input: number; output: number; cacheCriacao: number; cacheLeitura: number };
+};
+
+/** Chama a Anthropic em streaming (mantém a conexão ativa e evita 524). */
+async function chamarAnthropicStream(chave: string, corpo: unknown): Promise<ResultadoStream> {
+  const res: ResultadoStream = {
+    ok: false, status: 0, erro: "", transitorio: false, recebeuTexto: false, texto: "", stop: null,
+    usage: { input: 0, output: 0, cacheCriacao: 0, cacheLeitura: 0 },
+  };
+  let resp: Response;
+  try {
+    resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": chave,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-31",
+      },
+      body: JSON.stringify(corpo),
+    });
+  } catch (e) {
+    res.erro = `sem conexão com a Anthropic (${(e as Error).message})`;
+    res.transitorio = true;
+    return res;
+  }
+  res.status = resp.status;
+  if (!resp.ok || !resp.body) {
+    const json: any = await resp.json().catch(() => null);
+    res.erro = json?.error?.message ?? "erro desconhecido";
+    res.transitorio = resp.status === 429 || resp.status >= 500;
+    return res;
+  }
+  const leitor = resp.body.getReader();
+  const dec = new TextDecoder();
+  let buffer = "";
+  try {
+    for (;;) {
+      const { value, done } = await leitor.read();
+      if (done) break;
+      buffer += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buffer.indexOf("\n\n")) >= 0) {
+        const frame = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        const linha = frame.split("\n").find((l) => l.startsWith("data:"));
+        if (!linha) continue;
+        let ev: any;
+        try { ev = JSON.parse(linha.slice(5).trim()); } catch { continue; }
+        if (ev.type === "message_start") {
+          const u = ev.message?.usage ?? {};
+          res.usage.input += u.input_tokens ?? 0;
+          res.usage.cacheCriacao += u.cache_creation_input_tokens ?? 0;
+          res.usage.cacheLeitura += u.cache_read_input_tokens ?? 0;
+          res.usage.output += u.output_tokens ?? 0;
+        } else if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
+          res.texto += ev.delta.text ?? "";
+          res.recebeuTexto = true;
+        } else if (ev.type === "message_delta") {
+          if (ev.delta?.stop_reason) res.stop = ev.delta.stop_reason;
+          if (ev.usage?.output_tokens != null) res.usage.output = ev.usage.output_tokens;
+        } else if (ev.type === "error") {
+          res.erro = ev.error?.message ?? "erro no streaming";
+          res.transitorio = ["overloaded_error", "api_error"].includes(ev.error?.type);
+          res.status = ev.error?.type === "overloaded_error" ? 529 : 500;
+          return res;
+        }
+      }
+    }
+  } catch (e) {
+    res.erro = `conexão interrompida (${(e as Error).message})`;
+    res.transitorio = true;
+    res.status = 599;
+    return res;
+  }
+  res.ok = true;
+  return res;
+}
+
 /** Cria o registro do relatório (status gerando) e devolve o id. */
 export async function iniciarRelatorio(diagnosticoId: string) {
   const { data: ult } = await supabaseAdmin
@@ -71,6 +158,12 @@ export async function executarRelatorio(relatorioId: string) {
   const falhar = async (msg: string) => {
     await supabaseAdmin.from("relatorios").update({ status: "erro", erro: msg }).eq("id", relatorioId);
     await supabaseAdmin.from("diagnosticos").update({ status: "erro_geracao" }).eq("id", diagnosticoId);
+    try {
+      const { notificarErroGeracao } = await import("./email.server");
+      await notificarErroGeracao({ diagnosticoId, relatorioId, erro: msg });
+    } catch (e) {
+      console.error("aviso de erro", e);
+    }
   };
 
   try {
@@ -160,54 +253,37 @@ export async function executarRelatorio(relatorioId: string) {
     let tokensCacheLeitura = 0;
 
     for (let trecho = 0; trecho < MAX_TRECHOS; trecho++) {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": chave,
-          "anthropic-version": "2023-06-01",
-          "anthropic-beta": "prompt-caching-2024-07-31",
-        },
-        body: JSON.stringify({
-          model: modelo,
-          max_tokens: MAX_TOKENS_RESPOSTA,
-          system: [
-            {
-              type: "text",
-              text: sistema,
-              cache_control: { type: "ephemeral" },
-            },
-          ],
-          messages: mensagens,
-        }),
-      });
-      const json: any = await resp.json().catch(() => null);
-      if (!resp.ok) {
-        console.error("Anthropic erro", resp.status, json);
-        await supabaseAdmin.from("relatorios").update({ tokens_entrada: tokensEntrada, tokens_saida: tokensSaida }).eq("id", relatorioId);
-        return falhar(`Falha na IA (${resp.status}): ${json?.error?.message ?? "erro desconhecido"}`);
+      const corpo = {
+        model: modelo,
+        max_tokens: MAX_TOKENS_RESPOSTA,
+        stream: true,
+        system: [{ type: "text", text: sistema, cache_control: { type: "ephemeral" } }],
+        messages: mensagens,
+      };
+      let r = await chamarAnthropicStream(chave, corpo);
+      if (!r.ok && r.transitorio && !r.recebeuTexto) {
+        await new Promise((ok) => setTimeout(ok, 5000));
+        r = await chamarAnthropicStream(chave, corpo);
       }
+      tokensEntrada += r.usage.input;
+      tokensCacheCriacao += r.usage.cacheCriacao;
+      tokensCacheLeitura += r.usage.cacheLeitura;
+      tokensSaida += r.usage.output;
+      if (!r.ok) {
+        console.error("Anthropic erro", r.status, r.erro);
+        await supabaseAdmin.from("relatorios").update({ tokens_entrada: tokensEntrada, tokens_saida: tokensSaida, tokens_cache_criacao: tokensCacheCriacao, tokens_cache_leitura: tokensCacheLeitura }).eq("id", relatorioId);
+        return falhar(`Falha na IA (${r.status}): ${r.erro}`);
+      }
+      partes.push(r.texto);
 
-      tokensEntrada += json?.usage?.input_tokens ?? 0;
-      tokensCacheCriacao += json?.usage?.cache_creation_input_tokens ?? 0;
-      tokensCacheLeitura += json?.usage?.cache_read_input_tokens ?? 0;
-      tokensSaida += json?.usage?.output_tokens ?? 0;
-      const blocos = Array.isArray(json?.content) ? json.content : [];
-      const textoTrecho = blocos
-        .filter((c: { type?: string }) => c.type === "text")
-        .map((c: { text?: string }) => c.text ?? "")
-        .join("");
-      partes.push(textoTrecho);
-
-      if (json?.stop_reason === "end_turn") {
+      if (r.stop === "end_turn") {
         finalizado = true;
         break;
       }
-      if (json?.stop_reason !== "max_tokens" || blocos.length === 0) break;
+      if (r.stop === "refusal") return falhar("A IA recusou gerar o relatório (refusal).");
+      if (r.stop !== "max_tokens" || !r.texto) break;
 
-      // Reenvia os blocos originais, inclusive eventuais assinaturas de pensamento,
-      // para a Anthropic continuar sem recomeçar nem duplicar o texto anterior.
-      mensagens.push({ role: "assistant", content: blocos });
+      mensagens.push({ role: "assistant", content: [{ type: "text", text: r.texto }] });
       mensagens.push({ role: "user", content: "Continue exatamente de onde parou, sem repetir o texto anterior. Termine todas as seções do relatório." });
     }
 

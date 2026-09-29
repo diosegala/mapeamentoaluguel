@@ -126,6 +126,7 @@ export type Database = {
         Row: {
           assunto: string
           corpo: string
+          emails_alerta: string
           envio_automatico: boolean
           id: string
           rodape: string
@@ -136,6 +137,7 @@ export type Database = {
         Insert: {
           assunto?: string
           corpo?: string
+          emails_alerta?: string
           envio_automatico?: boolean
           id?: string
           rodape?: string
@@ -146,6 +148,7 @@ export type Database = {
         Update: {
           assunto?: string
           corpo?: string
+          emails_alerta?: string
           envio_automatico?: boolean
           id?: string
           rodape?: string
