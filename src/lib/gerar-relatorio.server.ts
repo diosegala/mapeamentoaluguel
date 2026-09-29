@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { blocoProjecao, metasDoTexto, projetarCarteira } from "@/lib/projecao-carteira";
 
 const LIMITE_BASE = 18_000;
 const MAX_TOKENS_RESPOSTA = 16_000;
@@ -9,7 +10,9 @@ REGRAS DE EVIDÊNCIA (obrigatórias, prevalecem sobre qualquer instrução acima
 - Só fatos respondidos: toda afirmação sobre a imobiliária deve vir de uma resposta do questionário. Não suponha tamanho, faturamento, equipe, ferramentas ou práticas não informados.
 - Recomendação com evidência: cada recomendação termina com "Com base em: ..." citando a(s) resposta(s) que a justificam. Se nenhuma resposta sustenta a recomendação, não a inclua.
 - Não apresente hipóteses como fatos ou causas provadas. Quando houver explicações alternativas, registre-as apenas como perguntas concretas na seção "Pontos a validar", ligadas a uma observação respondida; não atribua nenhuma alternativa à imobiliária. Quando faltar informação, escreva "Não informado no questionário".
-- Números: use apenas números informados ou cálculos diretos entre eles; mostre origem, conta, período e unidade em linguagem simples. Confira se as unidades, bases e períodos são compatíveis. Se faltar dado ou uma fórmula estiver dimensionalmente incorreta, não calcule nem projete: leve o dado a validar. Não faça comparativos com o mercado, nem mesmo usando a base de conhecimento.
+- Números: use apenas números informados, cálculos diretos entre eles e o bloco "Projeção da carteira (calculada pela CUPOLA)", quando presente; mostre origem e conta em linguagem simples. A projeção da carteira vem pronta: use exatamente esses números, sem refazer, contestar ou dizer que não é possível projetar. Não faça outros comparativos com o mercado; as únicas referências externas permitidas são a TRID (60%) e a TCNC (30%), apresentadas como "referências médias observadas pela CUPOLA".
+- Nunca diga que um dado não foi informado se ele consta nas respostas. "Pontos a validar" serve para causas e hipóteses, nunca para dados que o questionário já coleta.
+- Nada genérico: cada parágrafo começa por um número ou resposta do cliente e diz o que isso significa para a operação dele. Proibido explicar conceitos ou metodologia ("este número descreve...") e proibido escrever frases que serviriam para qualquer imobiliária.
 - A base de conhecimento CUPOLA serve para explicar o método e os pilares, nunca como fonte de fatos sobre o cliente.
 - Tom não determinístico: apresente leituras como observações ("as respostas indicam", "segundo o informado"). Não faça afirmações definitivas sobre causas ou resultados futuros e não prometa ganhos.
 - Respostas contraditórias: aponte a contradição sem escolher uma das versões.
@@ -233,7 +236,15 @@ export async function executarRelatorio(relatorioId: string) {
       extras.push(`- ${textos.get(k) ?? k}: ${formatarValor(v)}`);
     }
     if (extras.length) linhas.push("\n## Outras respostas", ...extras);
-    const usuario = `Imobiliária: ${diag.nome_imobiliaria}\nCidade: ${diag.cidade}/${diag.estado}\n\nRespostas do mapeamento, agrupadas pelas seções do formulário:\n${linhas.join("\n")}\n\nEscreva o relatório de diagnóstico.`;
+    const projecao = blocoProjecao(
+      projetarCarteira({
+        carteira: respostas["imoveis_administrados"],
+        desocupacoes: respostas["desocupacoes_mes"],
+        captacoes: respostas["captacoes_mes"],
+        metas: metasDoTexto(respostas["meta_12_meses"]),
+      }),
+    );
+    const usuario = `Imobiliária: ${diag.nome_imobiliaria}\nCidade: ${diag.cidade}/${diag.estado}\n\nRespostas do mapeamento, agrupadas pelas seções do formulário:\n${linhas.join("\n")}\n\n${projecao ? projecao + "\n\n" : ""}Escreva o relatório de diagnóstico.`;
 
     const modelo = cfg.modelo || "claude-sonnet-5";
     await supabaseAdmin
