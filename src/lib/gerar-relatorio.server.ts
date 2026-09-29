@@ -1,27 +1,25 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { blocoProjecao, metasDoTexto, projetarCarteira } from "@/lib/projecao-carteira";
 
-const LIMITE_BASE = 18_000;
-const MAX_TOKENS_RESPOSTA = 16_000;
+// A base inteira vai para o modelo (janela de 1M tokens). Acima deste teto a geração
+// falha com aviso claro, em vez de cortar documentos em silêncio.
+const LIMITE_BASE = 2_000_000;
+// O raciocínio interno do modelo consome o mesmo limite do texto; folga evita continuações.
+const MAX_TOKENS_RESPOSTA = 64_000;
 const MAX_TRECHOS = 5;
-const REGRAS_FORMATO = `
+// Regras que valem para qualquer versão do prompt salva no painel.
+const REGRAS_FIXAS = `
 
-REGRAS DE EVIDÊNCIA (obrigatórias, prevalecem sobre qualquer instrução acima):
-- Só fatos respondidos: toda afirmação sobre a imobiliária deve vir de uma resposta do questionário. Não suponha tamanho, faturamento, equipe, ferramentas ou práticas não informados.
-- Recomendação com evidência: cada recomendação termina com "Com base em: ..." citando a(s) resposta(s) que a justificam. Se nenhuma resposta sustenta a recomendação, não a inclua.
-- Não apresente hipóteses como fatos ou causas provadas. Quando houver explicações alternativas, registre-as apenas como perguntas concretas na seção "Pontos a validar", ligadas a uma observação respondida; não atribua nenhuma alternativa à imobiliária. Quando faltar informação, escreva "Não informado no questionário".
-- Números: use apenas números informados, cálculos diretos entre eles e o bloco "Projeção da carteira (calculada pela CUPOLA)", quando presente; mostre origem e conta em linguagem simples. A projeção da carteira vem pronta: use exatamente esses números, sem refazer, contestar ou dizer que não é possível projetar. Não faça outros comparativos com o mercado; as únicas referências externas permitidas são a TRID (60%) e a TCNC (30%), apresentadas como "referências médias observadas pela CUPOLA".
-- Nunca diga que um dado não foi informado se ele consta nas respostas. "Pontos a validar" serve para causas e hipóteses, nunca para dados que o questionário já coleta.
-- Nada genérico: cada parágrafo começa por um número ou resposta do cliente e diz o que isso significa para a operação dele. Proibido explicar conceitos ou metodologia ("este número descreve...") e proibido escrever frases que serviriam para qualquer imobiliária.
-- A base de conhecimento CUPOLA serve para explicar o método e os pilares, nunca como fonte de fatos sobre o cliente.
-- Tom não determinístico: apresente leituras como observações ("as respostas indicam", "segundo o informado"). Não faça afirmações definitivas sobre causas ou resultados futuros e não prometa ganhos.
-- Respostas contraditórias: aponte a contradição sem escolher uma das versões.
-- Texto claro: frases curtas, uma ideia por frase e números distribuídos com explicação. Evite jargão sem definição, causalidade não demonstrada, frases alarmistas e construções repetidas.
-- Termine o relatório com a seção "## Limites deste diagnóstico", listando perguntas não respondidas ou vagas que limitam a análise.
+# Regras fixas do sistema
+- Fatos sobre a imobiliária vêm somente de <imobiliaria>, <respostas> e <projecao_carteira>. Os diagnósticos de outras imobiliárias na base de conhecimento são referência de método e profundidade: nunca transfira fatos, números ou nomes deles para este relatório.
+- Os números de <projecao_carteira> são oficiais: use-os como estão, sem refazer ou contestar.
+- Cada prioridade termina com "Com base em: ..." citando as respostas que a sustentam.
+- Termine o relatório com a seção "## Limites deste diagnóstico".
+- Escreva em português do Brasil, em Markdown (títulos ##, listas, tabelas e negrito). Não inclua aviso de que o texto foi gerado por IA; o sistema adiciona.`;
 
-REGRAS DE FORMATO (obrigatórias):
-- Escreva em português do Brasil, em Markdown, com títulos (##), listas e negrito quando útil.
-- Não inclua o aviso de IA; ele é adicionado pelo sistema.`;
+function escaparAtributo(texto: string): string {
+  return texto.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
 
 async function chaveAnthropic(): Promise<string | null> {
   const doAmbiente = process.env["ANTHROPIC_API_KEY"] ?? "";
@@ -192,19 +190,26 @@ export async function executarRelatorio(relatorioId: string) {
     const chave = await chaveAnthropic();
     if (!chave) return falhar("Chave da Anthropic não configurada.");
 
-    let base = "";
     const usados: string[] = [];
+    const documentos: string[] = [];
     for (const d of docs ?? []) {
-      if (base.length >= LIMITE_BASE) break;
-      const trecho = `\n\n### ${d.titulo}\n${d.conteudo}`;
-      base += trecho.slice(0, LIMITE_BASE - base.length);
+      documentos.push(`<documento titulo="${escaparAtributo(d.titulo)}">\n${d.conteudo}\n</documento>`);
       usados.push(d.id);
     }
+    const base = documentos.length
+      ? `<base_conhecimento>\n${documentos.join("\n\n")}\n</base_conhecimento>`
+      : "";
+    if (base.length > LIMITE_BASE)
+      return falhar(
+        `A base de conhecimento ativa tem ${base.length} caracteres, acima do limite de ${LIMITE_BASE}. Desative documentos no painel.`,
+      );
 
-    const sistema =
-      cfg.prompt_sistema +
-      REGRAS_FORMATO +
-      (base ? `\n\nBASE DE CONHECIMENTO CUPOLA:${base}` : "");
+    const instrucoes = cfg.prompt_sistema + REGRAS_FIXAS;
+    // Base primeiro: é grande e estável, então o cache continua valendo quando o prompt muda.
+    const sistemaBlocos = [
+      ...(base ? [{ type: "text", text: base, cache_control: { type: "ephemeral" } }] : []),
+      { type: "text", text: instrucoes, cache_control: { type: "ephemeral" } },
+    ];
 
     const respostas = (diag.respostas ?? {}) as Record<string, unknown>;
     const { data: secoesDb } = await (supabaseAdmin as any)
@@ -244,12 +249,18 @@ export async function executarRelatorio(relatorioId: string) {
         metas: metasDoTexto(respostas["meta_12_meses"]),
       }),
     );
-    const usuario = `Imobiliária: ${diag.nome_imobiliaria}\nCidade: ${diag.cidade}/${diag.estado}\n\nRespostas do mapeamento, agrupadas pelas seções do formulário:\n${linhas.join("\n")}\n\n${projecao ? projecao + "\n\n" : ""}Escreva o relatório de diagnóstico.`;
+    const usuario = [
+      `<imobiliaria>\nNome: ${diag.nome_imobiliaria}\nCidade: ${diag.cidade}/${diag.estado}\n</imobiliaria>`,
+      `<respostas>\nRespostas do mapeamento, agrupadas pelas seções do formulário:\n${linhas.join("\n")}\n</respostas>`,
+      ...(projecao ? [`<projecao_carteira>\n${projecao}\n</projecao_carteira>`] : []),
+      "Escreva o relatório de diagnóstico.",
+    ].join("\n\n");
 
     const modelo = cfg.modelo || "claude-sonnet-5";
+    // O snapshot guarda só as instruções; os documentos usados ficam em documentos_usados.
     await supabaseAdmin
       .from("relatorios")
-      .update({ prompt_snapshot: sistema, documentos_usados: usados, modelo })
+      .update({ prompt_snapshot: instrucoes, documentos_usados: usados, modelo })
       .eq("id", relatorioId);
 
     const mensagens: Array<{ role: "user" | "assistant"; content: unknown }> = [
@@ -268,7 +279,7 @@ export async function executarRelatorio(relatorioId: string) {
         model: modelo,
         max_tokens: MAX_TOKENS_RESPOSTA,
         stream: true,
-        system: [{ type: "text", text: sistema, cache_control: { type: "ephemeral" } }],
+        system: sistemaBlocos,
         messages: mensagens,
       };
       let r = await chamarAnthropicStream(chave, corpo);
