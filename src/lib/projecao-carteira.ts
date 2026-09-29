@@ -13,6 +13,7 @@ export type ProjecaoCarteira = {
   fator: number;
   serie: number[]; // meses 0..12
   crescimento: number;
+  final: number;
   metas: Array<{ meta: number; icca: number; captacoesMes: number }>;
 };
 
@@ -40,13 +41,14 @@ export function projetarCarteira(
   const icca = captacoes / carteira;
   const fator = 1 - tdca + tdca * trid + icca * tcnc;
   const serie = [carteira];
-  for (let i = 1; i <= 12; i++) serie.push(serie[i - 1] * fator);
+  let atual = carteira;
+  for (let i = 1; i <= 12; i++) { atual *= fator; serie.push(atual); }
   const metas = (entrada.metas ?? []).map((meta) => {
     const f = Math.pow(1 + meta, 1 / 12);
     const iccaNec = (f - 1 + tdca * (1 - trid)) / tcnc;
     return { meta, icca: iccaNec, captacoesMes: iccaNec * carteira };
   });
-  return { carteira, desocupacoes, captacoes, tdca, icca, trid, tcnc, fator, serie, crescimento: serie[12] / carteira - 1, metas };
+  return { carteira, desocupacoes, captacoes, tdca, icca, trid, tcnc, fator, serie, crescimento: atual / carteira - 1, final: atual, metas };
 }
 
 const pct = (x: number, d = 1) => `${(x * 100).toFixed(d).replace(".", ",")}%`;
@@ -62,7 +64,7 @@ export function blocoProjecao(p: ProjecaoCarteira | null): string {
     `- TRID (relocação dos imóveis desocupados) = ${pct(p.trid, 0)} e TCNC (captações que viram contrato) = ${pct(p.tcnc, 0)}: referências médias observadas pela CUPOLA.`,
     `- Fórmula mensal: carteira do mês = carteira anterior − carteira × TDCA + carteira × TDCA × TRID + carteira × ICCA × TCNC (fator mensal ${p.fator.toFixed(4).replace(".", ",")}).`,
     `- Série (mês 0 a 12): ${p.serie.map(n1).join(" → ")}.`,
-    `- Carteira projetada em 12 meses: ${n1(p.serie[12])} imóveis; crescimento de ${pct(p.crescimento)} (${n1(p.serie[12] - p.carteira)} imóveis).`,
+    `- Carteira projetada em 12 meses: ${n1(p.final)} imóveis; crescimento de ${pct(p.crescimento)} (${n1(p.final - p.carteira)} imóveis).`,
   ];
   for (const m of p.metas)
     l.push(`- Para crescer ${pct(m.meta, 0)} em 12 meses, mantidas TDCA, TRID e TCNC: ICCA necessário ${pct(m.icca, 2)}, ou cerca de ${n1(m.captacoesMes)} captações por mês (hoje: ${p.captacoes}).`);
