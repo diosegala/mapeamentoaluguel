@@ -180,17 +180,33 @@ function Admin() {
                         {new Date(d.created_at).toLocaleDateString("pt-BR")}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => {
-                            navigator.clipboard.writeText(d.codigo);
-                            toast.success("Código copiado");
-                          }}
-                        >
-                          <Copy className="h-3.5 w-3.5" /> Copiar
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => {
+                              navigator.clipboard.writeText(d.codigo);
+                              toast.success("Código copiado");
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" /> Copiar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-destructive hover:text-destructive"
+                            disabled={excluirMut.isPending}
+                            onClick={() => {
+                              const ok = window.confirm(
+                                `Excluir o diagnóstico de "${d.nome_imobiliaria}" (${d.codigo})?\n\nIsso remove também relatórios, envios de e-mail e registros de uso vinculados. Essa ação não pode ser desfeita.`,
+                              );
+                              if (ok) excluirMut.mutate(d.id);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Excluir
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
