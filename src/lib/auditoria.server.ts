@@ -19,7 +19,8 @@ Não são problemas: recomendações, práticas e parâmetros atribuídos ao Mé
 
 # Como corrigir
 - "trecho" é uma cópia exata, caractere por caractere, de um pedaço do relatório, inclusive asteriscos e pontuação. Deve ser curto, de preferência uma frase, e aparecer uma única vez no relatório.
-- "correcao" é o texto que substitui o trecho. Mude só o necessário e mantenha o tom e o formato. Para remover uma afirmação, reescreva a frase sem ela.
+- "correcao" é o texto que substitui o trecho. Mude só o necessário e mantenha o tom e o formato. Leia a frase anterior e a seguinte: a correção precisa se encaixar nelas sem repetir informação e sem deixar pontuação solta.
+- Nunca deixe "correcao" vazia. Para remover uma afirmação, use como trecho a frase inteira e escreva a frase de novo sem ela.
 - Para incluir um ponto a validar omitido, use como trecho a linha "## Limites deste diagnóstico" e como correção essa mesma linha, uma linha em branco e o novo item "- ...".
 - Para problemas de estrutura, deixe trecho e correção vazios.
 
@@ -98,7 +99,8 @@ export async function revisarRelatorio(opcoes: {
 export function aplicarCorrecoes(texto: string, problemas: Problema[]) {
   let aplicadas = 0;
   for (const p of problemas) {
-    if (!p.trecho) continue;
+    // Correção vazia apagaria o trecho e poderia deixar a frase quebrada; nesse caso, mantém o original.
+    if (!p.trecho || !p.correcao.trim()) continue;
     const i = texto.indexOf(p.trecho);
     if (i < 0 || texto.indexOf(p.trecho, i + 1) >= 0) continue;
     texto = texto.slice(0, i) + p.correcao + texto.slice(i + p.trecho.length);
