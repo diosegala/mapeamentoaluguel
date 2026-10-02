@@ -8,9 +8,24 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 export const CHAVE_NOME = "nome_responsavel";
 export const CHAVE_EMAIL = "email_responsavel";
 
+/**
+ * Remetente a partir de RESEND_FROM_EMAIL, aceitando "email" ou "Nome <email>".
+ * Limpa aspas, < > convertidos em &lt; &gt; e caracteres invisíveis que painéis de segredos às vezes gravam.
+ */
 function remetente() {
-  const from = process.env["RESEND_FROM_EMAIL"]?.trim();
-  return from && from.length > 3 ? from : "CUPOLA <onboarding@resend.dev>";
+  const bruto = (process.env["RESEND_FROM_EMAIL"] ?? "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/[​-‍﻿]/g, "")
+    .trim()
+    .replace(/^["']+|["']+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const m = bruto.match(/^(?:(.*?)\s*<\s*([^<>\s@]+@[^<>\s@]+\.[^<>\s@]+)\s*>|([^<>\s@]+@[^<>\s@]+\.[^<>\s@]+))$/);
+  if (!m) return "CUPOLA <onboarding@resend.dev>";
+  const email = m[2] ?? m[3];
+  const nome = (m[1] ?? "").replace(/["']/g, "").trim() || "CUPOLA";
+  return `${nome} <${email}>`;
 }
 
 function chaves() {
@@ -36,7 +51,7 @@ export async function enviarEmail(opcoes: { para: string; assunto: string; html:
     try {
       msg = JSON.parse(corpo)?.message ?? corpo;
     } catch {}
-    throw new Error(`Falha ao enviar (${resp.status}): ${String(msg).slice(0, 300)}`);
+    throw new Error(`Falha ao enviar (${resp.status}): ${String(msg).slice(0, 300)} Remetente usado: ${remetente()}`);
   }
   const json: any = await resp.json().catch(() => ({}));
   return { id: (json?.id as string) ?? null };
