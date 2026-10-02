@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
 import { MODELOS_AUDITORIA, ROTULOS_VEREDITO, revisaoEmMarkdown } from "@/lib/auditoria-modelos";
 import { rotuloStatus } from "@/lib/status-diagnostico";
+import { linkWhatsApp } from "@/lib/telefone";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -97,7 +98,7 @@ function Detalhe() {
                   disabled={!publicado}
                   onClick={() =>
                     window.open(
-                      `https://wa.me/?text=${encodeURIComponent(`Olá! Seu diagnóstico da operação de locação feito pela CUPOLA está pronto: ${link}`)}`,
+                      linkWhatsApp(d.telefone, `Olá! Seu diagnóstico da operação de locação feito pela CUPOLA está pronto: ${link}`),
                       "_blank",
                     )
                   }

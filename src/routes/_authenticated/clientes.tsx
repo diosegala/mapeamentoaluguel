@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, MessageCircle } from "lucide-react";
+import { Check, Copy, MessageCircle, Pencil, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -10,7 +10,8 @@ import { AlterarSenha } from "@/components/cupola/alterar-senha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { criarDiagnostico } from "@/lib/admin.functions";
-import { listarClientes } from "@/lib/clientes.functions";
+import { atualizarTelefone, listarClientes } from "@/lib/clientes.functions";
+import { formatarTelefone, linkWhatsApp, mascararTelefone } from "@/lib/telefone";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   head: () => ({ meta: [{ title: "Clientes | CUPOLA" }] }),
@@ -23,6 +24,7 @@ type Cliente = {
   nome_imobiliaria: string;
   cidade: string;
   estado: string;
+  telefone: string | null;
   status: string;
   secao_atual: number | null;
   created_at: string;
@@ -77,19 +79,21 @@ function Clientes() {
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Etapa | "todos">("todos");
-  const [recemCriado, setRecemCriado] = useState<{ codigo: string; nome_imobiliaria: string } | null>(null);
+  const [recemCriado, setRecemCriado] = useState<{ codigo: string; nome_imobiliaria: string; telefone: string } | null>(null);
 
   const q = useQuery({ queryKey: ["clientes"], queryFn: () => listar(), refetchInterval: 60_000 });
 
   const criarMut = useMutation({
-    mutationFn: () => criar({ data: { nome_imobiliaria: nome, cidade, estado } }),
+    mutationFn: () => criar({ data: { nome_imobiliaria: nome, cidade, estado, telefone: telefone || undefined } }),
     onSuccess: (novo) => {
-      setRecemCriado({ codigo: novo.codigo, nome_imobiliaria: nome });
+      setRecemCriado({ codigo: novo.codigo, nome_imobiliaria: nome, telefone });
       setNome("");
       setCidade("");
       setEstado("");
+      setTelefone("");
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao cadastrar."),
@@ -130,7 +134,7 @@ function Clientes() {
             Cadastre a imobiliária para gerar o código e o link do questionário.
           </p>
           <form
-            className="mt-5 grid gap-3 md:grid-cols-[2fr_1.5fr_auto_auto]"
+            className="mt-5 grid gap-3 md:grid-cols-[2fr_1.3fr_5rem_1.4fr_auto]"
             onSubmit={(e) => {
               e.preventDefault();
               criarMut.mutate();
@@ -144,7 +148,16 @@ function Clientes() {
               value={estado}
               onChange={(e) => setEstado(e.target.value.toUpperCase().slice(0, 2))}
               required
-              className="h-11 w-20 uppercase"
+              className="h-11 uppercase"
+            />
+            <Input
+              id="cliente-telefone"
+              type="tel"
+              inputMode="tel"
+              placeholder="WhatsApp (opcional)"
+              value={telefone}
+              onChange={(e) => setTelefone(mascararTelefone(e.target.value))}
+              className="h-11"
             />
             <Button type="submit" className="h-11 px-6" disabled={criarMut.isPending}>
               {criarMut.isPending ? "Cadastrando..." : "Cadastrar"}
@@ -176,8 +189,8 @@ function Clientes() {
                   className="border-[#3a3f47] bg-transparent text-foreground-on-dark hover:bg-white/10 hover:text-foreground-on-dark"
                   asChild
                 >
-                  <a href={`https://wa.me/?text=${encodeURIComponent(mensagemWhatsApp(recemCriado))}`} target="_blank" rel="noreferrer">
-                    <MessageCircle /> Enviar por WhatsApp
+                  <a href={linkWhatsApp(recemCriado.telefone, mensagemWhatsApp(recemCriado))} target="_blank" rel="noreferrer">
+                    <MessageCircle /> {recemCriado.telefone ? `Enviar para ${recemCriado.telefone}` : "Enviar por WhatsApp"}
                   </a>
                 </Button>
               </div>
@@ -221,11 +234,12 @@ function Clientes() {
             ) : lista.length === 0 ? (
               <p className="p-6 text-sm text-foreground-muted">Nenhum cliente encontrado.</p>
             ) : (
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="border-b border-border text-[13px] text-foreground-subtle">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Imobiliária</th>
                     <th className="px-4 py-3 font-semibold">Código</th>
+                    <th className="px-4 py-3 font-semibold">WhatsApp</th>
                     <th className="px-4 py-3 font-semibold">Andamento</th>
                     <th className="px-4 py-3 font-semibold">Cadastro</th>
                     <th className="px-4 py-3 font-semibold">Respondido em</th>
@@ -245,6 +259,9 @@ function Clientes() {
                         </td>
                         <td className="px-4 py-3 font-semibold tracking-[0.15em]">{c.codigo}</td>
                         <td className="px-4 py-3">
+                          <CelulaTelefone cliente={c} />
+                        </td>
+                        <td className="px-4 py-3">
                           <span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap ${a.classe}`}>{a.texto}</span>
                         </td>
                         <td className="px-4 py-3 text-foreground-subtle">{data(c.created_at)}</td>
@@ -255,7 +272,12 @@ function Clientes() {
                               <Copy className="h-3.5 w-3.5" /> Link
                             </Button>
                             <Button variant="ghost" size="sm" asChild>
-                              <a href={`https://wa.me/?text=${encodeURIComponent(mensagemWhatsApp(c))}`} target="_blank" rel="noreferrer">
+                              <a
+                                href={linkWhatsApp(c.telefone, mensagemWhatsApp(c))}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={c.telefone ? `Abre a conversa com ${formatarTelefone(c.telefone)}` : "Sem número: escolha o contato no WhatsApp"}
+                              >
                                 <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                               </a>
                             </Button>
@@ -273,5 +295,65 @@ function Clientes() {
         <AlterarSenha />
       </div>
     </main>
+  );
+}
+
+/** WhatsApp do cliente com edição na própria linha. */
+function CelulaTelefone({ cliente }: { cliente: Cliente }) {
+  const queryClient = useQueryClient();
+  const salvar = useServerFn(atualizarTelefone);
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState(formatarTelefone(cliente.telefone));
+  const mut = useMutation({
+    mutationFn: () => salvar({ data: { id: cliente.id, telefone: valor } }),
+    onSuccess: () => {
+      setEditando(false);
+      toast.success(valor ? "WhatsApp salvo" : "WhatsApp removido");
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  if (!editando)
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setValor(formatarTelefone(cliente.telefone));
+          setEditando(true);
+        }}
+        className="group inline-flex items-center gap-1.5 text-left whitespace-nowrap hover:text-foreground"
+        aria-label={cliente.telefone ? "Editar WhatsApp" : "Adicionar WhatsApp"}
+      >
+        {cliente.telefone ? formatarTelefone(cliente.telefone) : <span className="text-foreground-subtle">Adicionar</span>}
+        <Pencil className="h-3.5 w-3.5 text-foreground-subtle group-hover:text-foreground" />
+      </button>
+    );
+
+  return (
+    <form
+      className="flex items-center gap-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        mut.mutate();
+      }}
+    >
+      <Input
+        id={`telefone-${cliente.id}`}
+        type="tel"
+        inputMode="tel"
+        autoFocus
+        value={valor}
+        onChange={(e) => setValor(mascararTelefone(e.target.value))}
+        placeholder="(41) 99999-8888"
+        className="h-8 w-40 text-[13px]"
+      />
+      <Button type="submit" variant="ghost" size="icon" className="h-8 w-8" disabled={mut.isPending} aria-label="Salvar">
+        <Check className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditando(false)} aria-label="Cancelar">
+        <X className="h-4 w-4" />
+      </Button>
+    </form>
   );
 }

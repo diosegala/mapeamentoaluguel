@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { garantirPapel } from "@/lib/papeis";
+import { normalizarTelefone } from "@/lib/telefone";
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -46,10 +47,13 @@ export const criarDiagnostico = createServerFn({ method: "POST" })
         nome_imobiliaria: z.string().trim().min(2).max(160),
         cidade: z.string().trim().min(2).max(120),
         estado: z.string().trim().min(2).max(2),
+        telefone: z.string().trim().max(30).optional(),
       })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
+    const telefone = data.telefone ? normalizarTelefone(data.telefone) : null;
+    if (data.telefone && !telefone) throw new Error("WhatsApp inválido. Use DDD e número, ex.: (41) 99999-8888.");
     // Admins e Atendimento cadastram clientes; a escrita usa a chave de serviço depois da checagem de papel.
     await garantirPapel(context.supabase, context.userId, ["admin", "cs"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -63,6 +67,7 @@ export const criarDiagnostico = createServerFn({ method: "POST" })
           nome_imobiliaria: data.nome_imobiliaria,
           cidade: data.cidade,
           estado: data.estado.toUpperCase(),
+          telefone,
         })
         .select("id, codigo")
         .single();
