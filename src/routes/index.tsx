@@ -41,7 +41,7 @@ function Home() {
   return (
     <main className="flex min-h-screen flex-col bg-dark-background text-foreground-on-dark">
       <header className="mx-auto w-full max-w-5xl px-6 pt-8">
-        <img src="/brand/cupola-consultoria-branca.png" alt="CUPOLA consultoria" className="h-8 w-auto" />
+        <img src="/brand/cupola-branca.png" alt="CUPOLA" className="h-8 w-auto" />
       </header>
 
       <section className="mx-auto w-full max-w-5xl flex-1 px-6 pt-16 pb-14">
@@ -96,7 +96,7 @@ function Home() {
       </section>
 
       <footer className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-dark-border px-6 py-8 text-[13px] text-[#9ea2a8]">
-        <span>CUPOLA consultoria · Método de gestão para imobiliárias</span>
+        <span>CUPOLA · Método de gestão para imobiliárias</span>
         <Link to="/auth" className="font-semibold text-foreground-on-dark underline">
           Acesso CUPOLA
         </Link>

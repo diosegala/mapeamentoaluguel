@@ -48,7 +48,7 @@ function AuthPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-dark-background px-6">
       <div className="w-full max-w-md rounded-2xl bg-card p-8">
-        <img src="/brand/cupola-consultoria.png" alt="CUPOLA consultoria" className="h-8 w-auto" />
+        <img src="/brand/cupola.png" alt="CUPOLA" className="h-8 w-auto" />
         <h1 className="titulo-marca mt-8 text-[20px]">Painel CUPOLA</h1>
         <p className="mt-2 text-sm text-foreground-muted">
           Entre com seu e-mail corporativo para gerenciar os diagnósticos.

@@ -170,7 +170,7 @@ function Espera({ iniciadoEm }: { iniciadoEm: string | null }) {
 function Tela({ titulo, texto, children }: { titulo: string; texto?: string; children?: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-col bg-dark-background px-6 py-8 text-foreground-on-dark">
-      <img src="/brand/cupola-consultoria-branca.png" alt="CUPOLA consultoria" className="h-7 w-auto self-start" />
+      <img src="/brand/cupola-branca.png" alt="CUPOLA" className="h-7 w-auto self-start" />
       <div className="flex flex-1 items-center justify-center py-12">
         <div className="w-full max-w-lg">
           <h1 className="titulo-marca text-[22px] sm:text-[26px]">{titulo}</h1>

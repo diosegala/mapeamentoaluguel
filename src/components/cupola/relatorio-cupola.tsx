@@ -52,7 +52,7 @@ export function RelatorioCupola({
       <header className="relatorio-capa bg-dark-background text-foreground-on-dark">
         <div className="mx-auto flex max-w-5xl flex-col gap-10 px-5 pt-7 pb-24 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <img src="/brand/cupola-consultoria-branca.png" alt="CUPOLA consultoria" className="capa-logo h-8 w-auto" />
+            <img src="/brand/cupola-branca.png" alt="CUPOLA" className="capa-logo h-8 w-auto" />
             {acoes && <div className="print-hidden flex flex-wrap gap-2">{acoes}</div>}
           </div>
           <img src="/brand/cupola-simbolo.png" alt="" className="capa-simbolo hidden" />
