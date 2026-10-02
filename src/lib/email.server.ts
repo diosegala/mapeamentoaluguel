@@ -38,11 +38,17 @@ function chaves() {
   };
 }
 
-export async function enviarEmail(opcoes: { para: string; assunto: string; html: string }) {
+export async function enviarEmail(opcoes: { para: string; assunto: string; html: string; responderPara?: string[] }) {
   const resp = await fetch(`${GATEWAY_URL}/emails`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...chaves() },
-    body: JSON.stringify({ from: remetente(), to: [opcoes.para], subject: opcoes.assunto, html: opcoes.html }),
+    body: JSON.stringify({
+      from: remetente(),
+      to: [opcoes.para],
+      subject: opcoes.assunto,
+      html: opcoes.html,
+      ...(opcoes.responderPara?.length ? { reply_to: opcoes.responderPara } : {}),
+    }),
   });
   if (!resp.ok) {
     const corpo = await resp.text();
@@ -114,7 +120,7 @@ export function renderizarEmail(m: ModeloEmail, v: VariaveisEmail) {
 
 export async function lerConfigEmail() {
   const { data } = await supabaseAdmin.from("configuracao_email" as never).select("*").limit(1).maybeSingle();
-  return data as (ModeloEmail & { id: string; envio_automatico: boolean; emails_alerta?: string; emails_revisao?: string }) | null;
+  return data as (ModeloEmail & { id: string; envio_automatico: boolean; emails_alerta?: string; emails_revisao?: string; responder_para?: string }) | null;
 }
 
 function linkRelatorio(codigo: string) {
@@ -169,7 +175,11 @@ export async function enviarRelatorioDiagnostico(opcoes: {
   const envioId = (envio as { id: string } | null)?.id;
 
   try {
-    const { id } = await enviarEmail({ para, assunto, html });
+    const responderPara = String(cfg.responder_para ?? "")
+      .split(/[,;\s]+/)
+      .map((e) => e.trim())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    const { id } = await enviarEmail({ para, assunto, html, responderPara });
     if (envioId)
       await supabaseAdmin
         .from("envios_email" as never)

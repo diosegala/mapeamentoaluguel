@@ -146,6 +146,7 @@ export type Database = {
           envio_automatico: boolean
           id: string
           rodape: string
+          responder_para: string
           texto_botao: string
           titulo: string
           updated_at: string
@@ -158,6 +159,7 @@ export type Database = {
           envio_automatico?: boolean
           id?: string
           rodape?: string
+          responder_para?: string
           texto_botao?: string
           titulo?: string
           updated_at?: string
@@ -170,6 +172,7 @@ export type Database = {
           envio_automatico?: boolean
           id?: string
           rodape?: string
+          responder_para?: string
           texto_botao?: string
           titulo?: string
           updated_at?: string

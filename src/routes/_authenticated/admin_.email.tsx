@@ -40,6 +40,7 @@ type Modelo = {
   rodape: string;
   emails_alerta: string;
   emails_revisao: string;
+  responder_para: string;
 };
 
 const ROTULO_STATUS: Record<string, string> = {
@@ -87,6 +88,7 @@ function PaginaEmail() {
         rodape: resto.rodape,
         emails_alerta: resto.emails_alerta ?? "",
         emails_revisao: resto.emails_revisao ?? "",
+        responder_para: resto.responder_para ?? "",
       });
     }
   }, [q.data, m]);
@@ -150,6 +152,18 @@ function PaginaEmail() {
                   checked={m.envio_automatico}
                   onCheckedChange={(v) => setM({ ...m, envio_automatico: v })}
                 />
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-card p-4">
+                <Label>Respostas dos clientes vão para</Label>
+                <Input
+                  placeholder="voce@cupola.com.br, outra@cupola.com.br"
+                  value={m.responder_para}
+                  onChange={campo("responder_para")}
+                />
+                <p className="text-xs text-foreground-muted">
+                  Quando o cliente clica em "Responder" no e-mail do relatório, a resposta vai para estes endereços.
+                </p>
               </div>
 
               <div className="space-y-2 rounded-lg border border-border bg-card p-4">
