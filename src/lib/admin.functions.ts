@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { garantirPapel } from "@/lib/papeis";
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -49,11 +50,13 @@ export const criarDiagnostico = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    await garantirAdmin(context.supabase, context.userId);
+    // Admins e Atendimento cadastram clientes; a escrita usa a chave de serviço depois da checagem de papel.
+    await garantirPapel(context.supabase, context.userId, ["admin", "cs"]);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     for (let tentativa = 0; tentativa < 6; tentativa++) {
       const codigo = gerarCodigo(8);
-      const { data: criado, error } = await context.supabase
+      const { data: criado, error } = await supabaseAdmin
         .from("diagnosticos")
         .insert({
           codigo,

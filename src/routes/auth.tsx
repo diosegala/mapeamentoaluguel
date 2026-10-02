@@ -35,9 +35,16 @@ function AuthPage() {
     event.preventDefault();
     setCarregando(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      const { data: sessao, error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) throw error;
-      navigate({ to: "/admin" });
+      const { data: linhas } = await supabase.from("user_roles").select("role").eq("user_id", sessao.user.id);
+      const papeis = (linhas ?? []).map((l) => l.role as string);
+      if (papeis.includes("admin")) navigate({ to: "/admin" });
+      else if (papeis.includes("cs")) navigate({ to: "/clientes" });
+      else {
+        await supabase.auth.signOut();
+        throw new Error("Seu usuário ainda não tem acesso ao painel. Fale com um administrador da CUPOLA.");
+      }
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível continuar.");
     } finally {
@@ -90,7 +97,7 @@ function AuthPage() {
         </form>
 
         <p className="mt-5 text-[13px] text-foreground-subtle">
-          Acessos são criados pela equipe CUPOLA na aba Administradores do painel.
+          Acessos são criados por um administrador na aba Usuários do painel.
         </p>
         <Link to="/" className="mt-4 inline-block text-[13px] font-semibold text-foreground-muted underline">
           ← Voltar ao início
