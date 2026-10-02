@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiFilaRelatoriosRouteImport } from './routes/api/fila-relatorios'
 import { Route as FormularioCodigoRouteImport } from './routes/formulario.$codigo'
 import { Route as RelatorioCodigoRouteImport } from './routes/relatorio.$codigo'
 import { Route as AuthenticatedAdminApiRouteImport } from './routes/_authenticated/admin_.api'
@@ -41,6 +42,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiFilaRelatoriosRoute = ApiFilaRelatoriosRouteImport.update({
+  id: '/api/fila-relatorios',
+  path: '/api/fila-relatorios',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FormularioCodigoRoute = FormularioCodigoRouteImport.update({
   id: '/formulario/$codigo',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/api/fila-relatorios': typeof ApiFilaRelatoriosRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
   '/admin/api': typeof AuthenticatedAdminApiRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/api/fila-relatorios': typeof ApiFilaRelatoriosRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
   '/admin/api': typeof AuthenticatedAdminApiRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/api/fila-relatorios': typeof ApiFilaRelatoriosRoute
   '/formulario/$codigo': typeof FormularioCodigoRoute
   '/relatorio/$codigo': typeof RelatorioCodigoRoute
   '/_authenticated/admin_/api': typeof AuthenticatedAdminApiRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/api/fila-relatorios'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
     | '/admin/api'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/api/fila-relatorios'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
     | '/admin/api'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/api/fila-relatorios'
     | '/formulario/$codigo'
     | '/relatorio/$codigo'
     | '/_authenticated/admin_/api'
@@ -186,6 +198,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiFilaRelatoriosRoute: typeof ApiFilaRelatoriosRoute
   FormularioCodigoRoute: typeof FormularioCodigoRoute
   RelatorioCodigoRoute: typeof RelatorioCodigoRoute
 }
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/fila-relatorios': {
+      id: '/api/fila-relatorios'
+      path: '/api/fila-relatorios'
+      fullPath: '/api/fila-relatorios'
+      preLoaderRoute: typeof ApiFilaRelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/formulario/$codigo': {
       id: '/formulario/$codigo'
@@ -315,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiFilaRelatoriosRoute: ApiFilaRelatoriosRoute,
   FormularioCodigoRoute: FormularioCodigoRoute,
   RelatorioCodigoRoute: RelatorioCodigoRoute,
 }

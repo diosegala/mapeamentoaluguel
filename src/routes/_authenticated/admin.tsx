@@ -9,6 +9,8 @@ import { AdminNav } from "@/components/cupola/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { criarDiagnostico, errosRecentes, excluirDiagnostico, listarDiagnosticos } from "@/lib/admin.functions";
+import { lerModeloEmail } from "@/lib/email.functions";
+import { rotuloStatus } from "@/lib/status-diagnostico";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -35,6 +37,8 @@ function Admin() {
   const excluir = useServerFn(excluirDiagnostico);
   const listarErros = useServerFn(errosRecentes);
   const erros = useQuery({ queryKey: ["erros-recentes"], queryFn: () => listarErros(), refetchInterval: 30000 });
+  const lerConfig = useServerFn(lerModeloEmail);
+  const config = useQuery({ queryKey: ["config-email"], queryFn: () => lerConfig() });
 
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
@@ -79,6 +83,7 @@ function Admin() {
     created_at: string;
   };
 
+  const aguardando = ((data ?? []) as Linha[]).filter((d) => d.status === "em_revisao");
   const lista = ((data ?? []) as Linha[]).filter((d) => {
     const t = busca.trim().toLowerCase();
     if (!t) return true;
@@ -101,12 +106,47 @@ function Admin() {
                   <Link to="/admin/diagnostico/$id" params={{ id: e.diagnostico_id }} className="font-medium underline">
                     {e.diagnosticos?.nome_imobiliaria}
                   </Link>{" "}
-                  (v{e.versao}, {new Date(e.created_at).toLocaleString("pt-BR")}): {e.erro} — abra para regenerar
+                  (v{e.versao}, {new Date(e.created_at).toLocaleString("pt-BR")}): {e.erro}. Abra para gerar de novo.
                 </li>
               ))}
             </ul>
           </section>
         )}
+        <section className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-dark-background p-5 text-foreground-on-dark">
+          <div className="grid gap-1">
+            <span className="text-[12px] font-bold tracking-[0.14em] text-primary uppercase">
+              {config.data
+                ? (config.data as { envio_automatico?: boolean }).envio_automatico
+                  ? "Envio automático ligado"
+                  : "Revisão humana ligada"
+                : "Modo de envio"}
+            </span>
+            <p className="text-[15px]">
+              {aguardando.length === 0
+                ? "Nenhum mapeamento aguardando revisão."
+                : `${aguardando.length} mapeamento(s) aguardando revisão antes do envio ao cliente.`}
+            </p>
+            {aguardando.length > 0 && (
+              <ul className="mt-1 flex flex-wrap gap-2">
+                {aguardando.map((d) => (
+                  <li key={d.id}>
+                    <Link
+                      to="/admin/diagnostico/$id"
+                      params={{ id: d.id }}
+                      className="inline-flex rounded-full bg-primary px-3 py-1 text-[13px] font-semibold text-primary-foreground"
+                    >
+                      Revisar {d.nome_imobiliaria}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Link to="/admin/email" className="text-[13px] font-semibold text-foreground-on-dark underline">
+            Alterar modo de envio
+          </Link>
+        </section>
+
         <section className="rounded-2xl border border-border bg-card p-6">
           <h1 className="titulo-marca text-[20px]">Novo diagnóstico</h1>
           <p className="mt-1 text-sm text-foreground-muted">
@@ -194,7 +234,19 @@ function Admin() {
                       <td className="px-4 py-3">
                         {d.cidade}/{d.estado}
                       </td>
-                      <td className="px-4 py-3">{d.status}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={
+                            d.status === "em_revisao"
+                              ? "rounded-full bg-foreground px-2.5 py-1 text-[12px] font-semibold text-primary"
+                              : d.status === "erro_geracao"
+                                ? "font-semibold text-destructive"
+                                : ""
+                          }
+                        >
+                          {rotuloStatus(d.status)}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-foreground-subtle">
                         {new Date(d.created_at).toLocaleDateString("pt-BR")}
                       </td>

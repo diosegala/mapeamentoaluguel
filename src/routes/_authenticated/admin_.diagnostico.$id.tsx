@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { RelatorioCupola } from "@/components/cupola/relatorio-cupola";
 import { RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
+import { RevisaoHumana } from "@/components/cupola/revisao-humana";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
 import { MODELOS_AUDITORIA, ROTULOS_VEREDITO, revisaoEmMarkdown } from "@/lib/auditoria-modelos";
+import { rotuloStatus } from "@/lib/status-diagnostico";
 
 export const Route = createFileRoute("/_authenticated/admin_/diagnostico/$id")({
   head: () => ({ meta: [{ title: "Detalhe do diagnóstico | CUPOLA" }] }),
@@ -37,7 +39,7 @@ function Detalhe() {
   });
   const regen = useMutation({
     mutationFn: () => regenerar({ data: { id } }),
-    onSuccess: () => toast.success("Nova versão gerada"),
+    onSuccess: () => toast.success("Nova versão na fila. Fica pronta em alguns minutos."),
     onError: (e) => toast.error((e as Error).message),
     onSettled: () => q.refetch(),
   });
@@ -61,7 +63,11 @@ function Detalhe() {
   const link = d && typeof window !== "undefined" ? `${window.location.origin}/relatorio/${d.codigo}` : "";
   const linkForm = d && typeof window !== "undefined" ? `${window.location.origin}/formulario/${d.codigo}` : "";
   const ultimo = q.data?.relatorios.find((r) => r.status === "concluido");
+  // Versão que o cliente vê, e versão gerada aguardando revisão (a mais nova, ainda não publicada).
+  const publicado = q.data?.relatorios.find((r) => r.publicado_em);
+  const pendente = ultimo && !ultimo.publicado_em ? ultimo : undefined;
   const respostas = (d?.respostas ?? {}) as Record<string, unknown>;
+  const local = d ? [d.cidade, d.estado].filter(Boolean).join("/") : "";
 
   return (
     <main className="min-h-screen bg-background">
@@ -76,19 +82,19 @@ function Detalhe() {
               <div>
                 <h1 className="titulo-marca text-[24px]">{d.nome_imobiliaria}</h1>
                 <p className="text-sm text-foreground-muted">
-                  {d.cidade}/{d.estado} · código <strong className="tracking-[0.15em]">{d.codigo}</strong> · {d.status}
+                  {d.cidade}/{d.estado} · código <strong className="tracking-[0.15em]">{d.codigo}</strong> · {rotuloStatus(d.status)}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => { navigator.clipboard.writeText(linkForm); toast.success("Link do questionário copiado"); }}>
                   Copiar link do questionário
                 </Button>
-                <Button variant="outline" disabled={!ultimo} onClick={() => { navigator.clipboard.writeText(link); toast.success("Link do relatório copiado"); }}>
+                <Button variant="outline" disabled={!publicado} onClick={() => { navigator.clipboard.writeText(link); toast.success("Link do relatório copiado"); }}>
                   Copiar link do relatório
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={!ultimo}
+                  disabled={!publicado}
                   onClick={() =>
                     window.open(
                       `https://wa.me/?text=${encodeURIComponent(`Olá! Seu diagnóstico da operação de locação feito pela CUPOLA está pronto: ${link}`)}`,
@@ -98,14 +104,14 @@ function Detalhe() {
                 >
                   Enviar por WhatsApp
                 </Button>
-                <Button variant="outline" disabled={!ultimo} onClick={() => window.open(link, "_blank")}>
+                <Button variant="outline" disabled={!publicado} onClick={() => window.open(link, "_blank")}>
                   Baixar PDF
                 </Button>
-                <Button variant="outline" disabled={!ultimo} onClick={() => setMostrarEmail((v) => !v)}>
+                <Button variant="outline" disabled={!publicado} onClick={() => setMostrarEmail((v) => !v)}>
                   Enviar por e-mail
                 </Button>
                 <Button disabled={regen.isPending || Object.keys(respostas).length === 0} onClick={() => regen.mutate()}>
-                  {regen.isPending ? "Gerando..." : "Regenerar relatório"}
+                  {regen.isPending ? "Enviando para a fila..." : "Gerar nova versão"}
                 </Button>
               </div>
             </header>
@@ -126,9 +132,21 @@ function Detalhe() {
                   {envio.isPending ? "Enviando..." : "Enviar relatório"}
                 </Button>
                 <p className="w-full text-xs text-foreground-subtle">
-                  Enquanto o subdomínio da cupola.com.br não estiver verificado no Resend, os envios de teste só chegam ao e-mail do dono da conta Resend.
+                  Reenvia a última versão aprovada. Enquanto o domínio da cupola.com.br não estiver verificado no Resend, os envios só chegam ao e-mail do dono da conta Resend.
                 </p>
               </section>
+            )}
+
+            {pendente?.conteudo && (
+              <RevisaoHumana
+                diagnosticoId={id}
+                versao={pendente}
+                nome={d.nome_imobiliaria}
+                local={local}
+                numeros={q.data!.numeros}
+                emailCliente={(respostas["email_responsavel"] as string | undefined) ?? null}
+                aoConcluir={() => q.refetch()}
+              />
             )}
 
             <section className="rounded-2xl border border-border bg-card p-6">
@@ -141,7 +159,9 @@ function Detalhe() {
                     <li key={r.id} className="space-y-1">
                       <div className="flex flex-wrap gap-3">
                         <strong>v{r.versao}</strong>
-                        <span>{r.status}</span>
+                        <span>
+                          {r.publicado_em ? "publicada" : r.status === "concluido" ? "aguardando revisão" : r.status}
+                        </span>
                         <span className="text-foreground-subtle">{new Date(r.created_at).toLocaleString("pt-BR")}</span>
                         <span className="text-foreground-subtle">{r.modelo ?? ""}</span>
                         {r.tokens_entrada != null && <span className="text-foreground-subtle">{r.tokens_entrada} / {r.tokens_saida} tokens</span>}
@@ -202,15 +222,22 @@ function Detalhe() {
               </section>
             )}
 
-            {ultimo?.conteudo && (
+            {publicado?.conteudo && !pendente && (
               <section className="grid gap-3">
-                <h2 className="text-[18px] font-bold">Relatório (v{ultimo.versao}), como o cliente vê</h2>
+                <h2 className="text-[18px] font-bold">
+                  Versão publicada (v{publicado.versao}), como o cliente vê
+                  {publicado.revisado_em && (
+                    <span className="ml-2 text-sm font-normal text-foreground-subtle">
+                      revisada em {new Date(publicado.revisado_em).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                </h2>
                 <div className="overflow-hidden rounded-2xl border border-border bg-background">
                   <RelatorioCupola
-                    conteudo={ultimo.conteudo}
+                    conteudo={publicado.conteudo}
                     nome={d.nome_imobiliaria}
-                    local={[d.cidade, d.estado].filter(Boolean).join("/")}
-                    geradoEm={ultimo.created_at}
+                    local={local}
+                    geradoEm={publicado.created_at}
                     numeros={q.data!.numeros}
                   />
                 </div>

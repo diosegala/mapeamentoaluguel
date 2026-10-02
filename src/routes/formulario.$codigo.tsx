@@ -69,7 +69,7 @@ function Formulario() {
 
   useEffect(() => {
     if (!q.data) return;
-    if (["concluido", "gerando_relatorio", "erro_geracao"].includes(q.data.status)) {
+    if (["concluido", "gerando_relatorio", "em_revisao", "erro_geracao"].includes(q.data.status)) {
       navigate({ to: "/relatorio/$codigo", params: { codigo }, replace: true });
       return;
     }

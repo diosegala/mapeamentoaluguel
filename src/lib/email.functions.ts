@@ -21,6 +21,7 @@ const modeloSchema = z.object({
   texto_botao: z.string().trim().min(2).max(60),
   rodape: z.string().trim().max(500),
   emails_alerta: z.string().trim().max(1000).optional(),
+  emails_revisao: z.string().trim().max(1000).optional(),
 });
 
 export const lerModeloEmail = createServerFn({ method: "GET" })

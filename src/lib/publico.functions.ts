@@ -106,7 +106,7 @@ export const abrirDiagnostico = createServerFn({ method: "POST" })
     };
   });
 
-const FINALIZADOS = ["gerando_relatorio", "concluido", "erro_geracao"];
+const FINALIZADOS = ["gerando_relatorio", "em_revisao", "concluido", "erro_geracao"];
 
 export const salvarSecao = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
@@ -167,7 +167,7 @@ export const concluirEGerar = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin, diag } = await buscarPorCodigo(data.codigo);
     if (diag.status === "concluido") return { ok: true, jaConcluido: true };
-    if (diag.status === "gerando_relatorio") return { ok: true };
+    if (diag.status === "gerando_relatorio" || diag.status === "em_revisao") return { ok: true };
     const umaHora = new Date(Date.now() - 3600_000).toISOString();
     const { count } = await supabaseAdmin
       .from("relatorios")
@@ -187,24 +187,12 @@ export const concluirEGerar = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Executa a geração pendente (chamada separada; o cliente não precisa aguardar). */
-export const processarRelatorio = createServerFn({ method: "POST" })
-  .inputValidator(entradaCodigo)
-  .handler(async ({ data }) => {
-    const { supabaseAdmin, diag } = await buscarPorCodigo(data.codigo);
-    const { data: rel } = await supabaseAdmin
-      .from("relatorios")
-      .select("id")
-      .eq("diagnostico_id", diag.id)
-      .eq("status", "gerando")
-      .order("versao", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!rel) return { ok: true };
-    const { executarRelatorio } = await import("./gerar-relatorio.server");
-    await executarRelatorio(rel.id);
-    return { ok: true };
-  });
+/** E-mail do respondente com o usuário mascarado (d****@cupola.com.br). */
+function mascararEmail(email: unknown): string | null {
+  const m = String(email ?? "").trim().match(/^([^@\s]+)@([^@\s]+\.[^@\s]+)$/);
+  if (!m) return null;
+  return `${m[1]!.slice(0, 1)}****@${m[2]}`;
+}
 
 export const lerRelatorio = createServerFn({ method: "POST" })
   .inputValidator(entradaCodigo)
@@ -212,39 +200,31 @@ export const lerRelatorio = createServerFn({ method: "POST" })
     let achado;
     try { achado = await buscarPorCodigo(data.codigo); } catch (e) { return { erro: (e as Error).message } as const; }
     const { supabaseAdmin, diag } = achado;
-    const { data: rel } = await supabaseAdmin
+    // O cliente só vê versões publicadas: aprovadas na revisão humana ou enviadas no modo automático.
+    const { data: pub } = await supabaseAdmin
       .from("relatorios")
-      .select("status, conteudo, created_at")
+      .select("conteudo, created_at")
       .eq("diagnostico_id", diag.id)
+      .not("publicado_em", "is", null)
       .order("versao", { ascending: false })
       .limit(1)
       .maybeSingle();
-    // Mostra a última versão concluída, se a mais nova ainda estiver gerando
-    let conteudo: string | null = rel?.status === "concluido" ? rel.conteudo : null;
-    let geradoEm: string | null = rel?.status === "concluido" ? rel.created_at : null;
-    if (!conteudo) {
-      const { data: ok } = await supabaseAdmin
-        .from("relatorios")
-        .select("conteudo, created_at")
-        .eq("diagnostico_id", diag.id)
-        .eq("status", "concluido")
-        .order("versao", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      conteudo = ok?.conteudo ?? null;
-      geradoEm = ok?.created_at ?? null;
-    }
+    const respostas = (diag.respostas ?? {}) as Record<string, unknown>;
+    const conteudo = (pub?.conteudo as string | null) ?? null;
     const { numerosDestaque } = await import("./indicadores-operacao");
+    const { CHAVE_EMAIL } = await import("./email.server");
     return {
       erro: null,
+      estado: (conteudo ? "publicado" : FINALIZADOS.includes(diag.status) ? "preparando" : "pendente") as
+        | "publicado"
+        | "preparando"
+        | "pendente",
       nome: diag.nome_imobiliaria as string,
       cidade: (diag.cidade ?? "") as string,
-      estado: (diag.estado ?? "") as string,
-      statusDiagnostico: diag.status as string,
-      statusRelatorio: (rel?.status ?? null) as string | null,
-      iniciadoEm: (rel?.created_at ?? null) as string | null,
-      geradoEm,
+      estado_uf: (diag.estado ?? "") as string,
+      email: mascararEmail(respostas[CHAVE_EMAIL]),
+      geradoEm: (pub?.created_at as string | null) ?? null,
       conteudo,
-      numeros: conteudo ? numerosDestaque((diag.respostas ?? {}) as Record<string, unknown>) : null,
+      numeros: conteudo ? numerosDestaque(respostas) : null,
     };
   });

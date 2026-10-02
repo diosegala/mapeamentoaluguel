@@ -142,6 +142,7 @@ export type Database = {
           assunto: string
           corpo: string
           emails_alerta: string
+          emails_revisao: string
           envio_automatico: boolean
           id: string
           rodape: string
@@ -153,6 +154,7 @@ export type Database = {
           assunto?: string
           corpo?: string
           emails_alerta?: string
+          emails_revisao?: string
           envio_automatico?: boolean
           id?: string
           rodape?: string
@@ -164,6 +166,7 @@ export type Database = {
           assunto?: string
           corpo?: string
           emails_alerta?: string
+          emails_revisao?: string
           envio_automatico?: boolean
           id?: string
           rodape?: string
@@ -356,6 +359,7 @@ export type Database = {
       relatorios: {
         Row: {
           conteudo: string | null
+          conteudo_ia: string | null
           conteudo_original: string | null
           created_at: string
           diagnostico_id: string
@@ -363,7 +367,12 @@ export type Database = {
           erro: string | null
           id: string
           modelo: string | null
+          nota_revisao: string | null
+          processando_desde: string | null
           prompt_snapshot: string | null
+          publicado_em: string | null
+          revisado_em: string | null
+          revisado_por: string | null
           status: string
           tokens_cache_criacao: number | null
           tokens_cache_leitura: number | null
@@ -374,6 +383,7 @@ export type Database = {
         }
         Insert: {
           conteudo?: string | null
+          conteudo_ia?: string | null
           conteudo_original?: string | null
           created_at?: string
           diagnostico_id: string
@@ -381,7 +391,12 @@ export type Database = {
           erro?: string | null
           id?: string
           modelo?: string | null
+          nota_revisao?: string | null
+          processando_desde?: string | null
           prompt_snapshot?: string | null
+          publicado_em?: string | null
+          revisado_em?: string | null
+          revisado_por?: string | null
           status?: string
           tokens_cache_criacao?: number | null
           tokens_cache_leitura?: number | null
@@ -392,6 +407,7 @@ export type Database = {
         }
         Update: {
           conteudo?: string | null
+          conteudo_ia?: string | null
           conteudo_original?: string | null
           created_at?: string
           diagnostico_id?: string
@@ -399,7 +415,12 @@ export type Database = {
           erro?: string | null
           id?: string
           modelo?: string | null
+          nota_revisao?: string | null
+          processando_desde?: string | null
           prompt_snapshot?: string | null
+          publicado_em?: string | null
+          revisado_em?: string | null
+          revisado_por?: string | null
           status?: string
           tokens_cache_criacao?: number | null
           tokens_cache_leitura?: number | null

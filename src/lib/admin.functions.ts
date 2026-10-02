@@ -108,7 +108,7 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
       context.supabase.from("diagnosticos").select("*").eq("id", data.id).single(),
       context.supabase
         .from("relatorios")
-        .select("id, versao, status, conteudo, erro, modelo, tokens_entrada, tokens_saida, created_at")
+        .select("id, versao, status, conteudo, conteudo_ia, publicado_em, revisado_em, nota_revisao, erro, modelo, tokens_entrada, tokens_saida, created_at")
         .eq("diagnostico_id", data.id)
         .order("versao", { ascending: false }),
       context.supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
@@ -121,7 +121,9 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
     ]);
     if (error || !diag) throw new Error("Diagnóstico não encontrado.");
     const { numerosDestaque } = await import("./indicadores-operacao");
+    const { data: cfgEmail } = await context.supabase.from("configuracao_email").select("envio_automatico").limit(1).maybeSingle();
     return {
+      envioAutomatico: Boolean(cfgEmail?.envio_automatico),
       diagnostico: diag as any,
       numeros: numerosDestaque(((diag as any).respostas ?? {}) as Record<string, unknown>),
       relatorios: (relatorios ?? []) as any[],
@@ -206,10 +208,68 @@ export const regenerarRelatorio = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     await garantirAdmin(context.supabase, context.userId);
-    const { iniciarRelatorio, executarRelatorio } = await import("./gerar-relatorio.server");
-    const relId = await iniciarRelatorio(data.id);
-    await executarRelatorio(relId);
+    // Só entra na fila: a geração roda no servidor (rota /api/fila-relatorios), sem depender desta página.
+    const { iniciarRelatorio } = await import("./gerar-relatorio.server");
+    await iniciarRelatorio(data.id);
     return { ok: true };
+  });
+
+const entradaRevisao = (data: unknown) =>
+  z
+    .object({
+      id: z.string().uuid(),
+      relatorioId: z.string().uuid(),
+      conteudo: z.string().trim().min(200, "O relatório ficou curto demais.").max(200_000),
+      nota: z.string().trim().max(4000).optional(),
+    })
+    .parse(data);
+
+/** Salva o texto revisado sem publicar. Só vale para versões ainda não publicadas. */
+export const salvarRevisao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(entradaRevisao)
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const { data: linhas, error } = await context.supabase
+      .from("relatorios")
+      .update({ conteudo: data.conteudo, nota_revisao: data.nota ?? null })
+      .eq("id", data.relatorioId)
+      .eq("diagnostico_id", data.id)
+      .eq("status", "concluido")
+      .is("publicado_em", null)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!linhas?.length) throw new Error("Esta versão já foi publicada ou não está pronta para revisão.");
+    return { ok: true };
+  });
+
+/** Publica a versão revisada e envia o e-mail ao cliente. A publicação vale mesmo se o envio falhar. */
+export const aprovarEEnviar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(entradaRevisao)
+  .handler(async ({ context, data }) => {
+    await garantirAdmin(context.supabase, context.userId);
+    const agora = new Date().toISOString();
+    const { data: linhas, error } = await context.supabase
+      .from("relatorios")
+      .update({
+        conteudo: data.conteudo,
+        nota_revisao: data.nota ?? null,
+        publicado_em: agora,
+        revisado_em: agora,
+        revisado_por: context.userId,
+      })
+      .eq("id", data.relatorioId)
+      .eq("diagnostico_id", data.id)
+      .eq("status", "concluido")
+      .is("publicado_em", null)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!linhas?.length) throw new Error("Esta versão já foi publicada ou não está pronta para revisão.");
+    await context.supabase.from("diagnosticos").update({ status: "concluido" }).eq("id", data.id);
+    const { enviarRelatorioDiagnostico } = await import("./email.server");
+    const envio = await enviarRelatorioDiagnostico({ diagnosticoId: data.id, relatorioId: data.relatorioId, automatico: false });
+    return { ok: true, enviado: envio.ok, erroEnvio: envio.ok ? null : (envio.erro ?? "Falha no envio.") };
   });
 
 export const enviarRelatorioPorEmail = createServerFn({ method: "POST" })
@@ -228,11 +288,11 @@ export const enviarRelatorioPorEmail = createServerFn({ method: "POST" })
       .from("relatorios")
       .select("id")
       .eq("diagnostico_id", data.id)
-      .eq("status", "concluido")
+      .not("publicado_em", "is", null)
       .order("versao", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (!relatorio) throw new Error("Ainda não há um relatório concluído para enviar.");
+    if (!relatorio) throw new Error("Ainda não há versão aprovada para enviar. Revise e aprove antes.");
     const { enviarRelatorioDiagnostico } = await import("./email.server");
     const r = await enviarRelatorioDiagnostico({
       diagnosticoId: data.id,

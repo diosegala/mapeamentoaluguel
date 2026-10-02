@@ -53,6 +53,36 @@ export async function iniciarRelatorio(diagnosticoId: string) {
   return data.id as string;
 }
 
+// Uma geração interrompida (queda, tempo esgotado) volta para a fila depois deste prazo.
+const RETOMAR_APOS_MS = 12 * 60_000;
+
+const limiteRetomada = () => new Date(Date.now() - RETOMAR_APOS_MS).toISOString();
+
+/** Reserva o relatório para esta execução; false se outra execução já está gerando. */
+async function reservarRelatorio(relatorioId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("relatorios")
+    .update({ processando_desde: new Date().toISOString() } as never)
+    .eq("id", relatorioId)
+    .eq("status", "gerando")
+    .or(`processando_desde.is.null,processando_desde.lt."${limiteRetomada()}"`)
+    .select("id");
+  return (data ?? []).length > 0;
+}
+
+/** Relatório pendente mais antigo da fila, ou null. */
+export async function proximoDaFila(): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("relatorios")
+    .select("id")
+    .eq("status", "gerando")
+    .or(`processando_desde.is.null,processando_desde.lt."${limiteRetomada()}"`)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
 /** Executa a geração de um relatório já iniciado. Nunca lança; registra erro. */
 export async function executarRelatorio(relatorioId: string) {
   const { data: rel } = await supabaseAdmin
@@ -61,7 +91,9 @@ export async function executarRelatorio(relatorioId: string) {
     .eq("id", relatorioId)
     .maybeSingle();
   if (!rel || rel.status !== "gerando") return;
+  if (!(await reservarRelatorio(relatorioId))) return;
   const diagnosticoId = rel.diagnostico_id;
+  let publicado = false;
 
   const falhar = async (msg: string) => {
     await supabaseAdmin.from("relatorios").update({ status: "erro", erro: msg }).eq("id", relatorioId);
@@ -232,13 +264,24 @@ export async function executarRelatorio(relatorioId: string) {
     }
 
     await salvarUso();
+    // Com o envio automático ligado, publica direto; desligado, aguarda a revisão humana no painel.
+    const { lerConfigEmail } = await import("./email.server");
+    publicado = Boolean((await lerConfigEmail())?.envio_automatico);
+    const agora = new Date().toISOString();
     await supabaseAdmin
       .from("relatorios")
-      .update({ status: "concluido", conteudo: final, conteudo_original: original, erro: null } as never)
+      .update({
+        status: "concluido",
+        conteudo: final,
+        conteudo_ia: final,
+        conteudo_original: original,
+        erro: null,
+        publicado_em: publicado ? agora : null,
+      } as never)
       .eq("id", relatorioId);
     await supabaseAdmin
       .from("diagnosticos")
-      .update({ status: "concluido", concluido_em: diag.concluido_em ?? new Date().toISOString() })
+      .update({ status: publicado ? "concluido" : "em_revisao", concluido_em: diag.concluido_em ?? agora })
       .eq("id", diagnosticoId);
   } catch (e) {
     console.error("gerar relatório", e);
@@ -246,19 +289,23 @@ export async function executarRelatorio(relatorioId: string) {
     return;
   }
 
-  // Envio automático ao cliente (apenas na primeira versão concluída).
   try {
+    const email = await import("./email.server");
+    if (!publicado) {
+      await email.notificarRevisaoPendente({ diagnosticoId, relatorioId });
+      return;
+    }
+    // Envio automático ao cliente apenas na primeira versão publicada.
     const { count } = await supabaseAdmin
       .from("relatorios")
       .select("id", { count: "exact", head: true })
       .eq("diagnostico_id", diagnosticoId)
-      .eq("status", "concluido");
+      .not("publicado_em", "is", null);
     if ((count ?? 0) === 1) {
-      const { enviarRelatorioDiagnostico } = await import("./email.server");
-      const r = await enviarRelatorioDiagnostico({ diagnosticoId, relatorioId, automatico: true });
+      const r = await email.enviarRelatorioDiagnostico({ diagnosticoId, relatorioId, automatico: true });
       if (!r.ok && !r.pulado) console.error("envio automático", r.erro);
     }
   } catch (e) {
-    console.error("envio automático", e);
+    console.error("pós-geração", e);
   }
 }

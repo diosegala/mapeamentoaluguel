@@ -99,7 +99,7 @@ export function renderizarEmail(m: ModeloEmail, v: VariaveisEmail) {
 
 export async function lerConfigEmail() {
   const { data } = await supabaseAdmin.from("configuracao_email" as never).select("*").limit(1).maybeSingle();
-  return data as (ModeloEmail & { id: string; envio_automatico: boolean }) | null;
+  return data as (ModeloEmail & { id: string; envio_automatico: boolean; emails_alerta?: string; emails_revisao?: string }) | null;
 }
 
 function linkRelatorio(codigo: string) {
@@ -187,6 +187,48 @@ function explicarErro(erro: string): string {
   return "Erro inesperado na geração.";
 }
 
+/** Endereços de uma lista configurada no painel; vazia = todos os administradores. */
+async function destinatariosInternos(lista: unknown): Promise<string[]> {
+  const destinos = String(lista ?? "")
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+  if (destinos.length) return destinos;
+  const { data: papeis } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
+  for (const p of papeis ?? []) {
+    const { data } = await supabaseAdmin.auth.admin.getUserById(p.user_id);
+    if (data?.user?.email) destinos.push(data.user.email);
+  }
+  return destinos;
+}
+
+/** Avisa quem revisa que um mapeamento novo aguarda revisão humana no painel. */
+export async function notificarRevisaoPendente(opcoes: { diagnosticoId: string; relatorioId: string }) {
+  const [{ data: diag }, { data: rel }, cfg] = await Promise.all([
+    supabaseAdmin.from("diagnosticos").select("id, codigo, nome_imobiliaria, cidade, estado").eq("id", opcoes.diagnosticoId).maybeSingle(),
+    supabaseAdmin.from("relatorios").select("versao").eq("id", opcoes.relatorioId).maybeSingle(),
+    lerConfigEmail(),
+  ]);
+  const destinos = await destinatariosInternos((cfg as any)?.emails_revisao);
+  if (!destinos.length) return;
+  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
+  const link = `${base}/admin/diagnostico/${opcoes.diagnosticoId}`;
+  const nome = diag?.nome_imobiliaria ?? "Diagnóstico";
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f1114">
+<p style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#3a3f47">Revisão pendente</p>
+<h1 style="font-size:20px">${esc(nome)}: mapeamento pronto para revisão</h1>
+<p>A versão ${rel?.versao ?? "-"} foi gerada e passou pela revisão automática. O cliente só recebe depois que alguém aprovar no painel.</p>
+<p><b>Código:</b> ${esc(diag?.codigo ?? "-")} · <b>Cidade:</b> ${esc(diag ? `${diag.cidade}/${diag.estado}` : "-")}</p>
+<p><a href="${link}" style="display:inline-block;background:#0f1114;color:#b0f90a;padding:12px 22px;border-radius:99px;text-decoration:none;font-weight:bold">Revisar no painel</a></p></div>`;
+  for (const para of destinos) {
+    try {
+      await enviarEmail({ para, assunto: `[Revisão] Mapeamento de ${nome} aguarda aprovação`, html });
+    } catch (e) {
+      console.error("aviso de revisão não enviado", para, (e as Error).message);
+    }
+  }
+}
+
 /** Avisa os administradores por e-mail que uma geração falhou. */
 export async function notificarErroGeracao(opcoes: { diagnosticoId: string; relatorioId: string; erro: string }) {
   const [{ data: diag }, { data: rel }, cfg] = await Promise.all([
@@ -194,17 +236,7 @@ export async function notificarErroGeracao(opcoes: { diagnosticoId: string; rela
     supabaseAdmin.from("relatorios").select("versao").eq("id", opcoes.relatorioId).maybeSingle(),
     lerConfigEmail(),
   ]);
-  let destinos = String((cfg as any)?.emails_alerta ?? "")
-    .split(/[,;\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
-  if (!destinos.length) {
-    const { data: papeis } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
-    for (const p of papeis ?? []) {
-      const { data } = await supabaseAdmin.auth.admin.getUserById(p.user_id);
-      if (data?.user?.email) destinos.push(data.user.email);
-    }
-  }
+  const destinos = await destinatariosInternos((cfg as any)?.emails_alerta);
   if (!destinos.length) return;
   const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
   const link = `${base}/admin/diagnostico/${opcoes.diagnosticoId}`;

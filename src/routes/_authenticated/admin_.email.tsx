@@ -39,6 +39,7 @@ type Modelo = {
   texto_botao: string;
   rodape: string;
   emails_alerta: string;
+  emails_revisao: string;
 };
 
 const ROTULO_STATUS: Record<string, string> = {
@@ -85,6 +86,7 @@ function PaginaEmail() {
         texto_botao: resto.texto_botao,
         rodape: resto.rodape,
         emails_alerta: resto.emails_alerta ?? "",
+        emails_revisao: resto.emails_revisao ?? "",
       });
     }
   }, [q.data, m]);
@@ -126,7 +128,7 @@ function PaginaEmail() {
         <div>
           <h1 className="titulo-marca text-[20px]">E-mail do relatório</h1>
           <p className="mt-1 text-sm text-foreground-muted">
-            Enviado ao cliente quando o relatório fica pronto, usando o nome e e-mail informados no questionário.
+            Enviado ao cliente quando o relatório é publicado, usando o nome e o e-mail informados no questionário.
           </p>
         </div>
 
@@ -137,13 +139,29 @@ function PaginaEmail() {
             <div className="space-y-5">
               <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
                 <div>
-                  <p className="font-semibold text-foreground">Envio automático</p>
-                  <p className="text-sm text-foreground-muted">Envia assim que a primeira versão do relatório fica pronta.</p>
+                  <p className="font-semibold text-foreground">Envio automático (sem revisão humana)</p>
+                  <p className="text-sm text-foreground-muted">
+                    {m.envio_automatico
+                      ? "Ligado: o relatório revisado pela IA é publicado e enviado ao cliente assim que fica pronto."
+                      : "Desligado: o relatório fica aguardando revisão no painel e só chega ao cliente depois de alguém clicar em \"Aprovar e enviar\"."}
+                  </p>
                 </div>
                 <Switch
                   checked={m.envio_automatico}
                   onCheckedChange={(v) => setM({ ...m, envio_automatico: v })}
                 />
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-card p-4">
+                <Label>E-mails que recebem aviso de revisão pendente</Label>
+                <Input
+                  placeholder="kariny@cupola.com.br"
+                  value={m.emails_revisao}
+                  onChange={campo("emails_revisao")}
+                />
+                <p className="text-xs text-foreground-muted">
+                  Recebem um aviso quando um mapeamento fica pronto e aguarda revisão. Vazio = todos os administradores.
+                </p>
               </div>
 
               <div className="space-y-2 rounded-lg border border-border bg-card p-4">
