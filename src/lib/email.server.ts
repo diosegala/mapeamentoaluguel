@@ -103,7 +103,7 @@ export async function lerConfigEmail() {
 }
 
 function linkRelatorio(codigo: string) {
-  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
+  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.cupola.com.br").replace(/\/$/, "");
   return `${base}/relatorio/${codigo}`;
 }
 
@@ -211,7 +211,7 @@ export async function notificarRevisaoPendente(opcoes: { diagnosticoId: string; 
   ]);
   const destinos = await destinatariosInternos((cfg as any)?.emails_revisao);
   if (!destinos.length) return;
-  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
+  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.cupola.com.br").replace(/\/$/, "");
   const link = `${base}/admin/diagnostico/${opcoes.diagnosticoId}`;
   const nome = diag?.nome_imobiliaria ?? "Diagnóstico";
   const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f1114">
@@ -238,7 +238,7 @@ export async function notificarErroGeracao(opcoes: { diagnosticoId: string; rela
   ]);
   const destinos = await destinatariosInternos((cfg as any)?.emails_alerta);
   if (!destinos.length) return;
-  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.lovable.app").replace(/\/$/, "");
+  const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.cupola.com.br").replace(/\/$/, "");
   const link = `${base}/admin/diagnostico/${opcoes.diagnosticoId}`;
   const quando = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const nome = diag?.nome_imobiliaria ?? "Diagnóstico";

@@ -61,7 +61,7 @@ export const previaModeloEmail = createServerFn({ method: "POST" })
       nome: "Mariana",
       imobiliaria: "Imobiliária Exemplo",
       cidade: "Curitiba/PR",
-      link: "https://mapeamentoaluguel.lovable.app/relatorio/EXEMPLO1",
+      link: "https://mapeamentoaluguel.cupola.com.br/relatorio/EXEMPLO1",
     });
   });
 

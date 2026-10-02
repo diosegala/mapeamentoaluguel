@@ -54,7 +54,7 @@ BEGIN
   END IF;
   SELECT decrypted_secret INTO v_token FROM vault.decrypted_secrets WHERE name = 'FILA_TOKEN';
   PERFORM net.http_post(
-    url := 'https://mapeamentoaluguel.lovable.app/api/fila-relatorios',
+    url := 'https://mapeamentoaluguel.cupola.com.br/api/fila-relatorios',
     body := '{}'::jsonb,
     headers := jsonb_build_object('content-type', 'application/json', 'x-fila-token', v_token),
     timeout_milliseconds := 600000
