@@ -72,7 +72,7 @@ export const listarEnviosEmail = createServerFn({ method: "GET" })
     await garantirAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("envios_email" as never)
-      .select("id, destinatario, automatico, status, erro, resend_id, created_at, diagnosticos(nome_imobiliaria)")
+      .select("id, destinatario, automatico, tipo, status, erro, resend_id, created_at, diagnosticos(nome_imobiliaria)")
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw new Error(error.message);
@@ -80,6 +80,7 @@ export const listarEnviosEmail = createServerFn({ method: "GET" })
       id: string;
       destinatario: string;
       automatico: boolean;
+      tipo: string;
       status: string;
       erro: string | null;
       resend_id: string | null;

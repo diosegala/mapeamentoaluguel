@@ -56,6 +56,12 @@ const ROTULO_STATUS: Record<string, string> = {
   erro: "Erro",
 };
 
+const ROTULO_TIPO: Record<string, string> = {
+  relatorio: "Relatório ao cliente",
+  aviso_revisao: "Aviso de revisão",
+  aviso_erro: "Alerta de erro",
+};
+
 const VARIAVEIS = [
   ["{{nome}}", "primeiro nome de quem preencheu"],
   ["{{imobiliaria}}", "nome da imobiliária"],
@@ -263,7 +269,12 @@ function PaginaEmail() {
                     <td className="p-3 whitespace-nowrap">{new Date(e.created_at).toLocaleString("pt-BR")}</td>
                     <td className="p-3">{e.diagnosticos?.nome_imobiliaria ?? "—"}</td>
                     <td className="p-3">{e.destinatario}</td>
-                    <td className="p-3">{e.automatico ? "Automático" : "Manual"}</td>
+                    <td className="p-3 whitespace-nowrap">
+                      {ROTULO_TIPO[e.tipo] ?? e.tipo}
+                      {e.tipo === "relatorio" && (
+                        <span className="block text-xs text-foreground-subtle">{e.automatico ? "Automático" : "Manual"}</span>
+                      )}
+                    </td>
                     <td className="p-3" title={e.erro ?? ""}>
                       {ROTULO_STATUS[e.status] ?? e.status}
                       {e.erro && <span className="block text-xs text-destructive">{e.erro}</span>}

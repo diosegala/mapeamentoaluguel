@@ -162,36 +162,68 @@ export async function enviarRelatorioDiagnostico(opcoes: {
   };
   const { assunto, html } = renderizarEmail(cfg, vars);
 
+  const responderPara = String(cfg.responder_para ?? "")
+    .split(/[,;\s]+/)
+    .map((e) => e.trim())
+    .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  return enviarERegistrar({
+    diagnosticoId: diag.id,
+    relatorioId: opcoes.relatorioId ?? null,
+    para,
+    assunto,
+    html,
+    tipo: "relatorio",
+    automatico: opcoes.automatico,
+    responderPara,
+  });
+}
+
+type TipoEnvio = "relatorio" | "aviso_revisao" | "aviso_erro";
+
+/** Envia e registra em envios_email, para o painel mostrar o status e o motivo de qualquer falha. Nunca lança. */
+async function enviarERegistrar(opcoes: {
+  diagnosticoId: string;
+  relatorioId: string | null;
+  para: string;
+  assunto: string;
+  html: string;
+  tipo: TipoEnvio;
+  automatico: boolean;
+  responderPara?: string[];
+}): Promise<{ ok: boolean; erro?: string }> {
   const { data: envio } = await supabaseAdmin
-    .from("envios_email" as never)
+    .from("envios_email")
     .insert({
-      diagnostico_id: diag.id,
-      relatorio_id: opcoes.relatorioId ?? null,
-      destinatario: para,
+      diagnostico_id: opcoes.diagnosticoId,
+      relatorio_id: opcoes.relatorioId,
+      destinatario: opcoes.para,
       automatico: opcoes.automatico,
-    } as never)
+      tipo: opcoes.tipo,
+    })
     .select("id")
     .single();
-  const envioId = (envio as { id: string } | null)?.id;
+  const envioId = envio?.id;
 
   try {
-    const responderPara = String(cfg.responder_para ?? "")
-      .split(/[,;\s]+/)
-      .map((e) => e.trim())
-      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
-    const { id } = await enviarEmail({ para, assunto, html, responderPara });
+    const { id } = await enviarEmail({
+      para: opcoes.para,
+      assunto: opcoes.assunto,
+      html: opcoes.html,
+      ...(opcoes.responderPara ? { responderPara: opcoes.responderPara } : {}),
+    });
     if (envioId)
       await supabaseAdmin
-        .from("envios_email" as never)
-        .update({ status: "enviado", resend_id: id, updated_at: new Date().toISOString() } as never)
+        .from("envios_email")
+        .update({ status: "enviado", resend_id: id, updated_at: new Date().toISOString() })
         .eq("id", envioId);
     return { ok: true };
   } catch (e) {
     const erro = (e as Error).message;
+    console.error(`envio ${opcoes.tipo} para ${opcoes.para} falhou:`, erro);
     if (envioId)
       await supabaseAdmin
-        .from("envios_email" as never)
-        .update({ status: "erro", erro, updated_at: new Date().toISOString() } as never)
+        .from("envios_email")
+        .update({ status: "erro", erro, updated_at: new Date().toISOString() })
         .eq("id", envioId);
     return { ok: false, erro };
   }
@@ -246,11 +278,15 @@ export async function notificarRevisaoPendente(opcoes: { diagnosticoId: string; 
 <p><b>Código:</b> ${esc(diag?.codigo ?? "-")} · <b>Cidade:</b> ${esc(diag ? `${diag.cidade}/${diag.estado}` : "-")}</p>
 <p><a href="${link}" style="display:inline-block;background:#0f1114;color:#b0f90a;padding:12px 22px;border-radius:99px;text-decoration:none;font-weight:bold">Revisar no painel</a></p></div>`;
   for (const para of destinos) {
-    try {
-      await enviarEmail({ para, assunto: `[Revisão] Mapeamento de ${nome} aguarda aprovação`, html });
-    } catch (e) {
-      console.error("aviso de revisão não enviado", para, (e as Error).message);
-    }
+    await enviarERegistrar({
+      diagnosticoId: opcoes.diagnosticoId,
+      relatorioId: opcoes.relatorioId,
+      para,
+      assunto: `[Revisão] Mapeamento de ${nome} aguarda aprovação`,
+      html,
+      tipo: "aviso_revisao",
+      automatico: true,
+    });
   }
 }
 
@@ -276,10 +312,14 @@ export async function notificarErroGeracao(opcoes: { diagnosticoId: string; rela
 <p><b>Quando:</b> ${quando}</p>
 <p><a href="${link}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none">Abrir no painel</a></p></div>`;
   for (const para of destinos) {
-    try {
-      await enviarEmail({ para, assunto: `[Erro] Relatório de ${nome} não foi gerado`, html });
-    } catch (e) {
-      console.error("alerta de erro não enviado", para, (e as Error).message);
-    }
+    await enviarERegistrar({
+      diagnosticoId: opcoes.diagnosticoId,
+      relatorioId: opcoes.relatorioId,
+      para,
+      assunto: `[Erro] Relatório de ${nome} não foi gerado`,
+      html,
+      tipo: "aviso_erro",
+      automatico: true,
+    });
   }
 }

@@ -271,6 +271,7 @@ export type Database = {
           relatorio_id: string | null
           resend_id: string | null
           status: string
+          tipo: string
           updated_at: string
         }
         Insert: {
@@ -283,6 +284,7 @@ export type Database = {
           relatorio_id?: string | null
           resend_id?: string | null
           status?: string
+          tipo?: string
           updated_at?: string
         }
         Update: {
@@ -295,6 +297,7 @@ export type Database = {
           relatorio_id?: string | null
           resend_id?: string | null
           status?: string
+          tipo?: string
           updated_at?: string
         }
         Relationships: [
