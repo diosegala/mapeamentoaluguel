@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { fraseAleatoria } from "@/lib/frases";
+import { limiteDaPergunta } from "@/lib/limite-opcoes";
 import { abrirDiagnostico, concluirEGerar, salvarSecao } from "@/lib/publico.functions";
 
 export const Route = createFileRoute("/formulario/$codigo")({
@@ -124,6 +125,9 @@ function Formulario() {
       const temOutro = v === "Outro" || (Array.isArray(v) && v.includes("Outro"));
       if (temOutro && !String(respostas[`${p.chave}__outro`] ?? "").trim())
         return apontar(p.chave, 'Você marcou "Outro". Descreva qual é no campo abaixo das opções.', "outro");
+      const limite = p.tipo === "escolha_multipla" ? limiteDaPergunta(p.texto) : null;
+      if (limite && Array.isArray(v) && v.length > limite)
+        return apontar(p.chave, `Marque no máximo ${limite} opções. Desmarque ${v.length - limite} para continuar.`, "pergunta");
     }
     const payload: Record<string, Valor> = {};
     for (const p of perguntas) {
@@ -225,11 +229,12 @@ function Campo({
   outro,
   set,
 }: {
-  p: { chave: string; tipo: string; opcoes: string[]; permite_outro: boolean };
+  p: { chave: string; texto: string; tipo: string; opcoes: string[]; permite_outro: boolean };
   valor: Valor;
   outro: string;
   set: (k: string, v: Valor) => void;
 }) {
+  const [avisoLimite, setAvisoLimite] = useState(false);
   // "Outro" cadastrado como opção comum não aparece duplicado.
   const base = (p.opcoes ?? []).filter((o) => !(p.permite_outro && /^outro$/i.test(o.trim())));
   const opcoes = [...base, ...(p.permite_outro ? ["Outro"] : [])];
@@ -271,11 +276,16 @@ function Campo({
   }
   if (p.tipo === "escolha_multipla") {
     const atual = Array.isArray(valor) ? valor : [];
+    const limite = limiteDaPergunta(p.texto);
     const alternar = (o: string) => {
       const nenhuma = /^nenhum/i.test(o);
+      setAvisoLimite(false);
       if (atual.includes(o)) return set(p.chave, atual.filter((x) => x !== o));
       if (nenhuma) return set(p.chave, [o]);
-      set(p.chave, [...atual.filter((x) => !/^nenhum/i.test(x)), o]);
+      const sem = atual.filter((x) => !/^nenhum/i.test(x));
+      // No limite, a nova opção não entra: a pessoa desmarca uma para trocar.
+      if (limite && sem.length >= limite) return setAvisoLimite(true);
+      set(p.chave, [...sem, o]);
       if (o === "Outro") focarOutro();
     };
     return (
@@ -285,6 +295,13 @@ function Campo({
             <SelectableButton key={o} label={o} selected={atual.includes(o)} onClick={() => alternar(o)} />
           ))}
         </div>
+        {limite && (
+          <p className={`mt-3 text-[13px] ${avisoLimite ? "font-semibold text-destructive" : "text-foreground-subtle"}`} aria-live="polite">
+            {avisoLimite
+              ? `Você já marcou ${limite} opções, o máximo desta pergunta. Desmarque uma para trocar.`
+              : `${atual.length} de ${limite} marcadas`}
+          </p>
+        )}
         {atual.includes("Outro") && campoOutro}
       </>
     );
