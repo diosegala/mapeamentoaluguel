@@ -59,6 +59,8 @@ function Formulario() {
   const [respostas, setRespostas] = useState<Record<string, Valor>>({});
   const [indice, setIndice] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
+  // Pergunta com problema: o erro aparece nela e a página rola até lá.
+  const [erroPergunta, setErroPergunta] = useState<{ chave: string; msg: string; foco: "outro" | "pergunta" } | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [transicao, setTransicao] = useState<string | null>(null);
 
@@ -94,17 +96,34 @@ function Formulario() {
   const perguntas = q.data.perguntas.filter((p) => p.secao === secao);
   const ultima = indice === secoes.length - 1;
 
-  const set = (k: string, v: Valor) => setRespostas((r) => ({ ...r, [k]: v }));
+  const set = (k: string, v: Valor) => {
+    setRespostas((r) => ({ ...r, [k]: v }));
+    // Corrigiu a pergunta destacada: o aviso some.
+    if (erroPergunta && (k === erroPergunta.chave || k === `${erroPergunta.chave}__outro`)) {
+      setErroPergunta(null);
+      setErro(null);
+    }
+  };
+
+  function apontar(chave: string, msg: string, foco: "outro" | "pergunta") {
+    setErroPergunta({ chave, msg, foco });
+    setErro("Revise a pergunta destacada acima para continuar.");
+    requestAnimationFrame(() => {
+      document.getElementById(`pergunta-${chave}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (foco === "outro") document.getElementById(`outro-${chave}`)?.focus({ preventScroll: true });
+    });
+  }
 
   async function avancar() {
     setErro(null);
+    setErroPergunta(null);
     for (const p of perguntas) {
       const v = respostas[p.chave];
       const vazio = v == null || v === "" || (Array.isArray(v) && v.length === 0);
-      if (p.obrigatoria && vazio) return setErro(`Responda: "${p.texto}"`);
+      if (p.obrigatoria && vazio) return apontar(p.chave, "Esta pergunta é obrigatória.", "pergunta");
       const temOutro = v === "Outro" || (Array.isArray(v) && v.includes("Outro"));
       if (temOutro && !String(respostas[`${p.chave}__outro`] ?? "").trim())
-        return setErro(`Descreva a opção "Outro" em: "${p.texto}"`);
+        return apontar(p.chave, 'Você marcou "Outro". Descreva qual é no campo abaixo das opções.', "outro");
     }
     const payload: Record<string, Valor> = {};
     for (const p of perguntas) {
@@ -162,7 +181,13 @@ function Formulario() {
 
         <div className="mt-8 space-y-6">
           {perguntas.map((p) => (
-            <div key={p.chave} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <div
+              key={p.chave}
+              id={`pergunta-${p.chave}`}
+              className={`scroll-mt-6 rounded-2xl border bg-card p-5 sm:p-6 ${
+                erroPergunta?.chave === p.chave ? "border-2 border-destructive" : "border-border"
+              }`}
+            >
               <label className="block text-[16px] font-semibold text-foreground">
                 {p.texto}
                 {p.obrigatoria && <span className="text-destructive"> *</span>}
@@ -171,6 +196,11 @@ function Formulario() {
               <div className="mt-3">
                 <Campo p={p} valor={respostas[p.chave] ?? null} outro={String(respostas[`${p.chave}__outro`] ?? "")} set={set} />
               </div>
+              {erroPergunta?.chave === p.chave && (
+                <p role="alert" className="mt-3 text-sm font-semibold text-destructive">
+                  {erroPergunta.msg}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -200,9 +230,23 @@ function Campo({
   outro: string;
   set: (k: string, v: Valor) => void;
 }) {
-  const opcoes = [...(p.opcoes ?? []), ...(p.permite_outro ? ["Outro"] : [])];
+  // "Outro" cadastrado como opção comum não aparece duplicado.
+  const base = (p.opcoes ?? []).filter((o) => !(p.permite_outro && /^outro$/i.test(o.trim())));
+  const opcoes = [...base, ...(p.permite_outro ? ["Outro"] : [])];
+  const focarOutro = () => setTimeout(() => document.getElementById(`outro-${p.chave}`)?.focus(), 0);
   const campoOutro = (
-    <Input className="mt-3" placeholder="Descreva" value={outro} maxLength={300} onChange={(e) => set(`${p.chave}__outro`, e.target.value)} />
+    <div className="mt-3 grid gap-1.5">
+      <label htmlFor={`outro-${p.chave}`} className="text-[13px] font-semibold text-foreground-muted">
+        Qual? Descreva a outra opção
+      </label>
+      <Input
+        id={`outro-${p.chave}`}
+        placeholder="Escreva aqui"
+        value={outro}
+        maxLength={300}
+        onChange={(e) => set(`${p.chave}__outro`, e.target.value)}
+      />
+    </div>
   );
 
   if (p.tipo === "escolha_unica") {
@@ -210,7 +254,15 @@ function Campo({
       <>
         <div className="flex flex-wrap gap-2">
           {opcoes.map((o) => (
-            <SelectableButton key={o} label={o} selected={valor === o} onClick={() => set(p.chave, o)} />
+            <SelectableButton
+              key={o}
+              label={o}
+              selected={valor === o}
+              onClick={() => {
+                set(p.chave, o);
+                if (o === "Outro") focarOutro();
+              }}
+            />
           ))}
         </div>
         {valor === "Outro" && campoOutro}
@@ -224,6 +276,7 @@ function Campo({
       if (atual.includes(o)) return set(p.chave, atual.filter((x) => x !== o));
       if (nenhuma) return set(p.chave, [o]);
       set(p.chave, [...atual.filter((x) => !/^nenhum/i.test(x)), o]);
+      if (o === "Outro") focarOutro();
     };
     return (
       <>
