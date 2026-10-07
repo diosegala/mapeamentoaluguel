@@ -123,6 +123,11 @@ export async function lerConfigEmail() {
   return data as (ModeloEmail & { id: string; envio_automatico: boolean; emails_alerta?: string; emails_revisao?: string; responder_para?: string }) | null;
 }
 
+/** Endereço público do app, sem barra no fim. */
+export function urlApp() {
+  return (process.env["APP_URL"] ?? "https://mapeamentoaluguel.cupola.com.br").replace(/\/$/, "");
+}
+
 function linkRelatorio(codigo: string) {
   const base = (process.env["APP_URL"] ?? "https://mapeamentoaluguel.cupola.com.br").replace(/\/$/, "");
   return `${base}/relatorio/${codigo}`;

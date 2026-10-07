@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CampoSenha } from "@/components/cupola/campo-senha";
 import { supabase } from "@/integrations/supabase/client";
 
 /** Troca de senha de quem está logado, pedindo a senha atual. */
@@ -43,9 +43,8 @@ export function AlterarSenha() {
           trocar.mutate();
         }}
       >
-        <Input
+        <CampoSenha
           id="senha-atual"
-          type="password"
           placeholder="Senha atual"
           autoComplete="current-password"
           value={senhaAtual}
@@ -53,9 +52,8 @@ export function AlterarSenha() {
           required
           className="h-11"
         />
-        <Input
+        <CampoSenha
           id="senha-nova"
-          type="password"
           placeholder="Nova senha"
           autoComplete="new-password"
           value={novaSenha}
@@ -64,9 +62,8 @@ export function AlterarSenha() {
           minLength={8}
           className="h-11"
         />
-        <Input
+        <CampoSenha
           id="senha-confirmar"
-          type="password"
           placeholder="Repetir nova senha"
           autoComplete="new-password"
           value={confirmarSenha}

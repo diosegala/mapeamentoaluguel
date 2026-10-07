@@ -7,6 +7,7 @@ import { Trash2 } from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { AlterarSenha } from "@/components/cupola/alterar-senha";
+import { CampoSenha } from "@/components/cupola/campo-senha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ROTULOS_PAPEL, type Papel } from "@/lib/papeis";
@@ -78,7 +79,8 @@ function Usuarios() {
         <section className="rounded-2xl border border-border bg-card p-6">
           <h1 className="titulo-marca text-[20px]">Novo usuário</h1>
           <p className="mt-1 text-sm text-foreground-muted">
-            Informe o e-mail, uma senha inicial e o papel. Se a pessoa já tiver conta, a senha e o papel são atualizados.
+            Informe o e-mail, uma senha inicial e o papel. Se a pessoa já tiver conta, a senha e o papel são atualizados. Quem
+            esquecer a senha pode redefinir sozinho pela tela de login, em "Esqueci minha senha".
           </p>
           <form
             className="mt-5 grid gap-4"
@@ -88,18 +90,22 @@ function Usuarios() {
             }}
           >
             <div className="grid gap-3 md:grid-cols-[2fr_1.5fr]">
+              {/* Sem preenchimento automático: o navegador não deve colar aqui o e-mail e a senha de quem está logado. */}
               <Input
                 id="novo-email"
+                name="novo-usuario-email"
                 type="email"
+                autoComplete="off"
                 placeholder="email@cupola.com.br"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="h-11"
               />
-              <Input
+              <CampoSenha
                 id="nova-senha-inicial"
-                type="password"
+                name="novo-usuario-senha"
+                autoComplete="new-password"
                 placeholder="Senha inicial (mín. 8)"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
