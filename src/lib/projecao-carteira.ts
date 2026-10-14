@@ -64,7 +64,7 @@ export function blocoProjecao(p: ProjecaoCarteira | null, locacoesInformadas: nu
     `- Carteira atual: ${p.carteira} imóveis administrados (só os alugados; o estoque disponível não entra na carteira nem na fórmula); desocupações/mês: ${p.desocupacoes}; captações/mês (imóveis captados, que entram no estoque disponível): ${p.captacoes}.`,
     `- TDCA (taxa de desocupação sobre a carteira) = ${p.desocupacoes} ÷ ${p.carteira} = ${pct(p.tdca, 2)} ao mês.`,
     `- ICCA (índice de captação sobre a carteira) = ${p.captacoes} ÷ ${p.carteira} = ${pct(p.icca, 2)} ao mês.`,
-    `- TRID (relocação dos imóveis desocupados) = ${pct(p.trid, 0)} e TCNC (captações que viram contrato) = ${pct(p.tcnc, 0)}: o questionário não pede esses valores porque costumam ser difíceis de monitorar; são referências médias observadas em clientes da CUPOLA.`,
+    `- TRID (relocação dos imóveis desocupados) = ${pct(p.trid, 0)} e TCNC (captações que viram contrato) = ${pct(p.tcnc, 0)}: o questionário não pede esses valores, por isso a projeção usa as referências médias observadas em clientes da CUPOLA. Não diga que a operação não mede esses indicadores.`,
     `- Fórmula mensal: carteira do mês = carteira anterior − carteira × TDCA + carteira × TDCA × TRID + carteira × ICCA × TCNC (fator mensal ${p.fator.toFixed(4).replace(".", ",")}).`,
     `- Fluxo do primeiro mês no cenário de referência: desocupam ${p.desocupacoes}; desses, ${n1(relocados)} seriam relocados e ${n1(p.desocupacoes - relocados)} sairiam da carteira. Das ${p.captacoes} captações, ${n1(novos)} virariam contrato novo e ${n1(p.captacoes - novos)} não entrariam na carteira naquele mês.`,
     `- Saldo mensal no cenário de referência = relocados + contratos novos − desocupações = ${n1(relocados)} + ${n1(novos)} − ${p.desocupacoes} = ${n1(relocados + novos - p.desocupacoes)} imóveis por mês.`,
@@ -76,6 +76,6 @@ export function blocoProjecao(p: ProjecaoCarteira | null, locacoesInformadas: nu
       `- Locações por mês que o cenário de referência pressupõe = ${n1(relocados)} relocados + ${n1(novos)} contratos novos = ${n1(relocados + novos)}. Locações por mês informadas pela imobiliária: ${locacoesInformadas} (${pct(locacoesInformadas / (relocados + novos), 0)} do cenário). Esta comparação é a distância entre a operação e a referência CUPOLA: ${locacoesInformadas < relocados + novos ? "a operação aluga menos do que o cenário pressupõe, então a carteira real tende a ficar abaixo da projeção" : "a operação aluga ao menos o que o cenário pressupõe"}.`,
     );
   for (const m of p.metas)
-    l.push(`- No cenário de referência, para crescer ${pct(m.meta, 0)} em 12 meses: ICCA necessário ${pct(m.icca, 2)}, ou cerca de ${n1(m.captacoesMes)} captações por mês (hoje: ${p.captacoes}). Esse número supõe TCNC de ${pct(p.tcnc, 0)}; com conversão real menor, seriam necessárias mais captações.`);
+    l.push(`- No cenário de referência, para crescer ${pct(m.meta, 0)} em 12 meses: ICCA necessário ${pct(m.icca, 2)}, ou cerca de ${n1(m.captacoesMes)} captações por mês (hoje: ${p.captacoes}). Esse número supõe TCNC de ${pct(p.tcnc, 0)}; com conversão real menor, seriam necessárias mais captações, então não o compare com as captações atuais como se a captação sobrasse.`);
   return l.join("\n");
 }
