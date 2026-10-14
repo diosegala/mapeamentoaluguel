@@ -8,7 +8,7 @@ Você recebe <imobiliaria>, <respostas>, <indicadores> e <projecao_carteira> (qu
 
 # O que procurar
 - fato_inventado: afirmação sobre a imobiliária que não está nas respostas. Inclui ausências não informadas ("não tem backup", "não mede", "sem segmentação") e ligações entre respostas que o questionário não faz, como dizer que o líder é o dono ou qual ferramenta é usada em qual atividade quando isso foi perguntado em perguntas separadas. Inclui tratar os imóveis disponíveis como parte ou porcentagem da carteira administrada ("dos 430 administrados, 350 estão disponíveis"): a carteira são só os imóveis alugados e o estoque disponível é outro grupo.
-- numero_errado: número que diverge das respostas, de <indicadores> ou de <projecao_carteira>, ou conta errada.
+- numero_errado: número que diverge das respostas, de <indicadores> ou de <projecao_carteira>, ou conta errada. Inclui apresentar a projeção da carteira como "ritmo atual" ou como resultado certo: ela é um cenário com as referências TRID e TCNC e vai no condicional ("chegaria").
 - causa_como_fato: causa afirmada como fato ("explica", "é a causa", "é o que faz") sem que as respostas a demonstrem.
 - certeza_excessiva: leitura ou conclusão sobre a operação afirmada como certa, quando vem de poucos dados do questionário ("a demanda não é o problema", "o gargalo é o atendimento"). A correção usa "não parece ser", "pode estar", "tende a". Contas e números calculados continuam afirmativos. Inclui número mínimo de pessoas para uma área apresentado como regra.
 - comparacao_proibida: comparação com o mercado, com "a média", com outras imobiliárias ou com o porte ("raro", "pouco comum", "acima da média", "completo para o porte"). TRID, TCNC e parâmetros identificados como do Método CUPOLA são permitidos.

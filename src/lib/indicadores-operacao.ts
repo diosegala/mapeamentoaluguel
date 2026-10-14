@@ -49,12 +49,6 @@ export function blocoIndicadores(respostas: Record<string, unknown>, projecao: P
     l.push(`- Carteira por pessoa do administrativo = ${carteira} ÷ ${pessoasAdm} = ${n1(carteira / pessoasAdm)} imóveis.`);
   if (positivo(pessoasAdm) && positivo(faturamento))
     l.push(`- Faturamento por pessoa do administrativo = ${reais(faturamento)} ÷ ${pessoasAdm} = ${reais(faturamento / pessoasAdm)} por mês.`);
-  if (projecao && locacoes !== null) {
-    const pelaFormula = projecao.desocupacoes * projecao.trid + projecao.captacoes * projecao.tcnc;
-    l.push(
-      `- Locações por mês pela fórmula da projeção (relocados + contratos novos) = ${n1(pelaFormula)}; locações por mês informadas = ${locacoes}.`,
-    );
-  }
 
   const alertas: string[] = [];
   if (positivo(leads) && locacoes !== null && locacoes > leads)
@@ -101,6 +95,8 @@ export type NumerosDestaque = {
   crescimento: number;
   captacoes: number;
   serie: number[];
+  locacoesReferencia: number;
+  locacoesInformadas: number | null;
   metas: Array<{ meta: number; captacoesMes: number }>;
   conversao: { locacoes: number; leads: number } | null;
 };
@@ -122,6 +118,8 @@ export function numerosDestaque(respostas: Record<string, unknown>): NumerosDest
     crescimento: p.crescimento,
     captacoes: p.captacoes,
     serie: p.serie,
+    locacoesReferencia: p.desocupacoes * p.trid + p.captacoes * p.tcnc,
+    locacoesInformadas: locacoes,
     metas: p.metas.map((m) => ({ meta: m.meta, captacoesMes: m.captacoesMes })),
     conversao: positivo(leads) && locacoes !== null ? { locacoes, leads } : null,
   };
@@ -135,5 +133,5 @@ export function blocosCalculados(respostas: Record<string, unknown>) {
     captacoes: respostas["captacoes_mes"],
     metas: metasDoTexto(respostas["meta_12_meses"]),
   });
-  return { projecao: blocoProjecao(p), indicadores: blocoIndicadores(respostas, p) };
+  return { projecao: blocoProjecao(p, num(respostas["locacoes_mes"])), indicadores: blocoIndicadores(respostas, p) };
 }

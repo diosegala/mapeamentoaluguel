@@ -98,9 +98,18 @@ function Destaques({ numeros }: { numeros: NumerosDestaque }) {
   const cartoes = [
     { rotulo: "Carteira hoje", valor: inteiro(numeros.carteira), detalhe: "imóveis administrados", escuro: false },
     {
-      rotulo: "Em 12 meses, no ritmo atual",
+      rotulo: "Em 12 meses, nas referências CUPOLA",
       valor: inteiro(numeros.final),
-      detalhe: [`${numeros.crescimento >= 0 ? "+" : "−"}${pct(Math.abs(numeros.crescimento))}`, faixa].filter(Boolean).join("; "),
+      detalhe: [
+        `${numeros.crescimento >= 0 ? "+" : "−"}${pct(Math.abs(numeros.crescimento))}`,
+        // O cenário supõe TRID e TCNC de referência; as locações reais mostram a distância até ele.
+        numeros.locacoesInformadas !== null
+          ? `pressupõe ${decimal(numeros.locacoesReferencia)} locações por mês, hoje são ${inteiro(numeros.locacoesInformadas)}`
+          : null,
+        faixa,
+      ]
+        .filter(Boolean)
+        .join("; "),
       escuro: true,
     },
     ...(metas.length
@@ -111,7 +120,7 @@ function Destaques({ numeros }: { numeros: NumerosDestaque }) {
               metas.length > 1
                 ? `${decimal(metas[0]!.captacoesMes)} a ${decimal(metas[metas.length - 1]!.captacoesMes)}`
                 : decimal(metas[0]!.captacoesMes),
-            detalhe: `por mês; hoje são ${inteiro(numeros.captacoes)}`,
+            detalhe: `por mês, nas referências CUPOLA; hoje são ${inteiro(numeros.captacoes)}`,
             escuro: false,
           },
         ]
@@ -349,7 +358,7 @@ function GraficoCarteira({ numeros }: { numeros: NumerosDestaque }) {
         <span className="flex flex-wrap gap-4 text-[13px] text-foreground-muted">
           <span className="inline-flex items-center gap-2">
             <i className="inline-block h-[3px] w-4 rounded bg-foreground" />
-            Ritmo atual
+            Cenário com referências CUPOLA
           </span>
           {faixa && (
             <span className="inline-flex items-center gap-2">
@@ -371,7 +380,7 @@ function GraficoCarteira({ numeros }: { numeros: NumerosDestaque }) {
           viewBox={`0 0 ${W} ${H}`}
           className="block h-auto w-full overflow-visible text-foreground"
           role="img"
-          aria-label={`Projeção da carteira de ${inteiro(numeros.carteira)} para ${inteiro(numeros.final)} imóveis em 12 meses`}
+          aria-label={`Projeção da carteira nas referências CUPOLA, de ${inteiro(numeros.carteira)} para ${inteiro(numeros.final)} imóveis em 12 meses`}
           onPointerMove={(e) => mover(e.clientX)}
           onPointerLeave={() => setFoco(null)}
         >
@@ -404,7 +413,7 @@ function GraficoCarteira({ numeros }: { numeros: NumerosDestaque }) {
             className="pointer-events-none absolute top-0 -translate-x-1/2 rounded-lg bg-dark-background px-3 py-1.5 text-[12px] whitespace-nowrap text-foreground-on-dark"
             style={{ left: `${(x(foco) / W) * 100}%` }}
           >
-            {foco === 0 ? "Hoje" : `Mês ${foco}`}: ritmo atual {inteiro(atual[foco]!)}
+            {foco === 0 ? "Hoje" : `Mês ${foco}`}: referências CUPOLA {inteiro(atual[foco]!)}
             {metaMin && ` · meta ${inteiro(metaMin[foco]!)}${metaMax && metas.length > 1 ? ` a ${inteiro(metaMax[foco]!)}` : ""}`}
           </div>
         )}
