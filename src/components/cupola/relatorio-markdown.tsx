@@ -12,8 +12,9 @@ export function RelatorioMarkdown({ conteudo }: { conteudo: string }) {
 export function AvisoIa() {
   return (
     <p className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground-muted">
-      Este relatório foi gerado por inteligência artificial a partir das suas respostas e é um
-      diagnóstico inicial.
+      Este relatório foi gerado com apoio de inteligência artificial a partir das suas respostas e é apenas
+      um ponto de partida para uma análise, que pode ser aprofundada por meio de um diagnóstico de Consultoria da
+      CUPOLA.
     </p>
   );
 }

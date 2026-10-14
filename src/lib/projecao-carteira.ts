@@ -58,7 +58,7 @@ export function blocoProjecao(p: ProjecaoCarteira | null): string {
   if (!p) return "";
   const l = [
     "# Projeção da carteira (calculada pela CUPOLA — números oficiais, não refaça nem conteste a conta)",
-    `- Carteira atual: ${p.carteira} imóveis administrados; desocupações/mês: ${p.desocupacoes}; captações/mês: ${p.captacoes}.`,
+    `- Carteira atual: ${p.carteira} imóveis administrados (só os alugados; o estoque disponível não entra na carteira nem na fórmula); desocupações/mês: ${p.desocupacoes}; captações/mês: ${p.captacoes}.`,
     `- TDCA (taxa de desocupação sobre a carteira) = ${p.desocupacoes} ÷ ${p.carteira} = ${pct(p.tdca, 2)} ao mês.`,
     `- ICCA (índice de captação sobre a carteira) = ${p.captacoes} ÷ ${p.carteira} = ${pct(p.icca, 2)} ao mês.`,
     `- TRID (relocação dos imóveis desocupados) = ${pct(p.trid, 0)} e TCNC (captações que viram contrato) = ${pct(p.tcnc, 0)}: referências médias observadas pela CUPOLA.`,

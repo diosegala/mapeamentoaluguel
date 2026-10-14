@@ -68,7 +68,8 @@ function Relatorio() {
         />
         <p className="mx-auto max-w-5xl px-5 pb-12 text-[13px] text-foreground-subtle sm:px-8">
           Este relatório foi gerado com apoio de inteligência artificial a partir das respostas do questionário, revisado
-          pela equipe CUPOLA, e é um diagnóstico inicial.
+          pela equipe CUPOLA, e é apenas um ponto de partida para uma análise, que pode ser aprofundada por meio de um
+          diagnóstico de Consultoria da CUPOLA.
         </p>
       </main>
     );

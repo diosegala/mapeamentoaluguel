@@ -161,7 +161,7 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
         .eq("id", data.relatorioId)
         .eq("diagnostico_id", data.id)
         .single(),
-      context.supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
+      context.supabase.from("perguntas_formulario").select("chave, texto, descricao, secao, ordem").order("secao").order("ordem"),
     ]);
     if (!diag || !rel?.conteudo) throw new Error("Relatório não encontrado.");
     const d = diag as any;
@@ -171,7 +171,8 @@ export const auditarRelatorioIa = createServerFn({ method: "POST" })
       .filter((p: any) => p.chave in respostas)
       .map((p: any) => {
         const outro = respostas[`${p.chave}__outro`];
-        return `- ${p.texto}\n  Resposta: ${fmt(respostas[p.chave])}${outro ? ` (Outro: ${outro})` : ""}`;
+        const orientacao = p.descricao?.trim() ? `\n  Orientação dada ao cliente: ${p.descricao.trim()}` : "";
+        return `- ${p.texto}${orientacao}\n  Resposta: ${fmt(respostas[p.chave])}${outro ? ` (Outro: ${outro})` : ""}`;
       })
       .join("\n");
     const cadastro = [

@@ -35,6 +35,7 @@ const ROTULOS_CATEGORIA: Record<string, string> = {
   fato_inventado: "Fato não informado",
   numero_errado: "Número errado",
   causa_como_fato: "Causa afirmada como fato",
+  certeza_excessiva: "Conclusão afirmada com certeza",
   comparacao_proibida: "Comparação proibida",
   ponto_a_validar_omitido: "Ponto a validar omitido",
   estilo: "Estilo",

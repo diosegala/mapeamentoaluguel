@@ -16,6 +16,13 @@ const reais = (x: number, casas = 0) => {
 };
 const positivo = (x: number | null): x is number => x !== null && x > 0;
 
+// Carteira e estoque são grupos separados; sem esta definição o modelo lê o estoque como fatia da carteira.
+const DEFINICOES = [
+  "Definições: imóveis administrados (carteira) são apenas os imóveis alugados, com contrato ativo.",
+  "Imóveis disponíveis (estoque) são os anunciados para locação hoje e não fazem parte da carteira.",
+  "Os dois números não se relacionam: não divida um pelo outro, não diga que o estoque é parte ou porcentagem da carteira e não some os dois.",
+].join(" ");
+
 export function blocoIndicadores(respostas: Record<string, unknown>, projecao: ProjecaoCarteira | null): string {
   const carteira = num(respostas["imoveis_administrados"]);
   const estoque = num(respostas["estoque_disponivel"]);
@@ -25,8 +32,6 @@ export function blocoIndicadores(respostas: Record<string, unknown>, projecao: P
   const pessoasAdm = num(respostas["pessoas_administrativo"]);
 
   const l: string[] = [];
-  if (positivo(carteira) && estoque !== null)
-    l.push(`- Estoque sobre a carteira = ${estoque} disponíveis ÷ ${carteira} administrados = ${pct(estoque / carteira)}.`);
   if (positivo(estoque) && locacoes !== null) {
     l.push(`- Velocidade de locação do estoque = ${locacoes} locações ÷ ${estoque} disponíveis = ${pct(locacoes / estoque)} ao mês.`);
     if (positivo(locacoes))
@@ -54,8 +59,6 @@ export function blocoIndicadores(respostas: Record<string, unknown>, projecao: P
   const alertas: string[] = [];
   if (positivo(leads) && locacoes !== null && locacoes > leads)
     alertas.push(`- Locações por mês (${locacoes}) maiores que leads por mês (${leads}).`);
-  if (positivo(carteira) && estoque !== null && estoque > carteira)
-    alertas.push(`- Imóveis disponíveis (${estoque}) maiores que a carteira administrada (${carteira}).`);
   if (projecao && projecao.tdca > 0.1)
     alertas.push(`- Desocupações somam ${pct(projecao.tdca)} da carteira ao mês.`);
   alertas.push(...contradicoes(respostas));
@@ -63,6 +66,7 @@ export function blocoIndicadores(respostas: Record<string, unknown>, projecao: P
   if (!l.length && !alertas.length) return "";
   return [
     "# Indicadores da operação (calculados pela CUPOLA a partir das respostas; use estes valores, sem refazer as contas)",
+    DEFINICOES,
     ...l,
     ...(alertas.length
       ? ["", "Pontos a validar com a imobiliária (aponte no relatório, sem escolher uma versão):", ...alertas]

@@ -122,7 +122,7 @@ export async function executarRelatorio(relatorioId: string) {
         .eq("ativo", true)
         .not("conteudo", "is", null)
         .order("ordem"),
-      supabaseAdmin.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
+      supabaseAdmin.from("perguntas_formulario").select("chave, texto, descricao, secao, ordem").order("secao").order("ordem"),
     ]);
     if (!diag) return falhar("Diagnóstico não encontrado.");
     if (!cfg) return falhar("Nenhum prompt ativo configurado.");
@@ -172,7 +172,9 @@ export async function executarRelatorio(relatorioId: string) {
       let v = formatarValor(respostas[p.chave]);
       const outro = respostas[`${p.chave}__outro`];
       if (outro) v += ` (Outro: ${outro})`;
-      linhas.push(`- ${p.texto}: ${v}`);
+      // A orientação da pergunta define o que o número significa (ex.: carteira = só imóveis alugados).
+      const orientacao = p.descricao?.trim() ? ` (orientação dada ao cliente: ${p.descricao.trim()})` : "";
+      linhas.push(`- ${p.texto}${orientacao}: ${v}`);
     }
     const extras: string[] = [];
     for (const [k, v] of Object.entries(respostas)) {
