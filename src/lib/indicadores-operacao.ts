@@ -56,6 +56,7 @@ export function blocoIndicadores(respostas: Record<string, unknown>, projecao: P
   if (projecao && projecao.tdca > 0.1)
     alertas.push(`- Desocupações somam ${pct(projecao.tdca)} da carteira ao mês.`);
   alertas.push(...contradicoes(respostas));
+  const observacoes = indicadoresDaProjecao(respostas);
 
   if (!l.length && !alertas.length) return "";
   return [
@@ -65,11 +66,21 @@ export function blocoIndicadores(respostas: Record<string, unknown>, projecao: P
     ...(alertas.length
       ? ["", "Pontos a validar com a imobiliária (aponte no relatório, sem escolher uma versão):", ...alertas]
       : []),
+    ...(observacoes.length ? ["", "Observações (não são contradições nem falhas da imobiliária):", ...observacoes] : []),
   ].join("\n");
 }
 
 const lista = (v: unknown): string[] =>
   (Array.isArray(v) ? v : typeof v === "string" && v ? [v] : []).map(String);
+
+/** Indicadores da projeção que a imobiliária diz acompanhar: dado útil, não contradição. */
+function indicadoresDaProjecao(respostas: Record<string, unknown>): string[] {
+  const declarados = lista(respostas["indicadores_acompanhados"]).filter((i) => /reloca|convers(ã|a)o das capta/i.test(i));
+  if (!declarados.length) return [];
+  return [
+    `- A imobiliária acompanha ${declarados.map((d) => `"${d}"`).join(" e ")}. O questionário não pede esses valores, então a projeção usa as referências. Recomende levar os valores que a imobiliária já acompanha para a projeção; não diga que falta valor registrado nem trate isso como contradição.`,
+  ];
+}
 
 /** Contradições entre respostas que o modelo tende a não perceber sozinho. */
 function contradicoes(respostas: Record<string, unknown>): string[] {
@@ -81,11 +92,6 @@ function contradicoes(respostas: Record<string, unknown>): string[] {
       `- Uso de IA declarado como "${usoIa}", mas a pergunta sobre ferramentas pede apenas as usadas de forma estruturada e foram marcadas: ${ferramentas.join(", ")}.`,
     );
   const acompanhados = lista(respostas["indicadores_acompanhados"]);
-  const declarados = acompanhados.filter((i) => /reloca|convers(ã|a)o das capta/i.test(i));
-  if (declarados.length)
-    out.push(
-      `- A imobiliária declara acompanhar ${declarados.map((d) => `"${d}"`).join(" e ")}, mas o questionário não pede esses valores; a projeção usa as referências TRID e TCNC. Os valores reais podem mudar a projeção.`,
-    );
   return out;
 }
 
