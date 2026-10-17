@@ -22,9 +22,16 @@ export const Route = createFileRoute("/api/fila-relatorios")({
 
         const { executarRelatorio, proximoDaFila } = await import("@/lib/gerar-relatorio.server");
         const id = await proximoDaFila();
-        if (!id) return Response.json({ processado: null });
-        await executarRelatorio(id);
-        return Response.json({ processado: id });
+        if (id) {
+          await executarRelatorio(id);
+          return Response.json({ processado: id });
+        }
+        // Relatórios de mercado só rodam quando não há cliente esperando.
+        const { executarRelatorioMercado, proximoDaFilaMercado } = await import("@/lib/gerar-relatorio-mercado.server");
+        const idMercado = await proximoDaFilaMercado();
+        if (!idMercado) return Response.json({ processado: null });
+        await executarRelatorioMercado(idMercado);
+        return Response.json({ processado: idMercado, tipo: "mercado" });
       },
     },
   },

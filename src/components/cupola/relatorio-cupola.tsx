@@ -32,6 +32,8 @@ export function RelatorioCupola({
   geradoEm,
   numeros,
   acoes,
+  rotulo = "Diagnóstico da operação de locação",
+  destaques,
 }: {
   conteudo: string;
   nome: string;
@@ -39,6 +41,10 @@ export function RelatorioCupola({
   geradoEm: string | null;
   numeros: NumerosDestaque | null;
   acoes?: ReactNode;
+  /** Linha acima do título da capa. */
+  rotulo?: string;
+  /** Cartões no lugar dos números do cliente (ex.: leitura de mercado). */
+  destaques?: ReactNode;
 }) {
   const { introducao, secoes } = useMemo(() => dividirSecoes(conteudo), [conteudo]);
   const data = new Date(geradoEm ?? Date.now()).toLocaleDateString("pt-BR", {
@@ -58,7 +64,7 @@ export function RelatorioCupola({
           <img src="/brand/cupola-simbolo.png" alt="" className="capa-simbolo hidden" />
           <div className="grid gap-4">
             <span className="text-[12px] font-bold tracking-[0.16em] text-primary uppercase">
-              Diagnóstico da operação de locação
+              {rotulo}
             </span>
             <h1 className="titulo-marca text-[30px] sm:text-[46px]">{nome}</h1>
             <p className="text-[15px] text-[#9ea2a8]">
@@ -69,7 +75,7 @@ export function RelatorioCupola({
       </header>
 
       <div className="relatorio-conteudo mx-auto grid max-w-5xl gap-12 px-5 pb-20 sm:px-8">
-        {numeros ? <Destaques numeros={numeros} /> : <div className="h-4" />}
+        {destaques ?? (numeros ? <Destaques numeros={numeros} /> : <div className="h-4" />)}
         {introducao && (
           <div className={`max-w-3xl ${prosa}`}>
             <Md texto={introducao} />

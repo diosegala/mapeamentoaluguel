@@ -18,3 +18,4 @@
 - [x] Refinar prompt ativo e revisão: clareza, contas verificáveis, IA transversal, sem comparativos de mercado
 - [ ] Validar relatório gerado sem enviar e-mail de teste ao cliente — depende de acesso administrativo ao Supabase externo; os diagnósticos existentes não contêm respostas às sete perguntas novas
 - [x] Projeção da carteira pela fórmula da planilha CUPOLA (cálculo no servidor, prompt v8, regras anti-genérico)
+- [x] Leitura de mercado no painel (/admin/mercado): dashboard de dores e indicadores, planilha .xlsx e relatório consolidado para a liderança na fila de geração

@@ -23,32 +23,71 @@ const DEFINICOES = [
   "Os dois números não se relacionam: não divida um pelo outro, não diga que o estoque é parte ou porcentagem da carteira e não some os dois.",
 ].join(" ");
 
-export function blocoIndicadores(respostas: Record<string, unknown>, projecao: ProjecaoCarteira | null): string {
+export type IndicadoresNumericos = {
+  carteira: number | null;
+  estoque: number | null;
+  locacoes: number | null;
+  leads: number | null;
+  faturamento: number | null;
+  pessoasAdm: number | null;
+  velocidadeEstoque: number | null;
+  mesesEstoque: number | null;
+  conversaoLeads: number | null;
+  leadsPorLocacao: number | null;
+  leadsPorImovel: number | null;
+  receitaPorImovel: number | null;
+  carteiraPorPessoa: number | null;
+  faturamentoPorPessoa: number | null;
+};
+
+/** Indicadores da operação em números; o texto do prompt e a leitura de mercado partem daqui. */
+export function indicadoresNumericos(respostas: Record<string, unknown>): IndicadoresNumericos {
   const carteira = num(respostas["imoveis_administrados"]);
   const estoque = num(respostas["estoque_disponivel"]);
   const locacoes = num(respostas["locacoes_mes"]);
   const leads = num(respostas["leads_mes"]);
   const faturamento = num(respostas["faturamento_locacao"]);
   const pessoasAdm = num(respostas["pessoas_administrativo"]);
+  return {
+    carteira,
+    estoque,
+    locacoes,
+    leads,
+    faturamento,
+    pessoasAdm,
+    velocidadeEstoque: positivo(estoque) && locacoes !== null ? locacoes / estoque : null,
+    mesesEstoque: positivo(estoque) && positivo(locacoes) ? estoque / locacoes : null,
+    conversaoLeads: positivo(leads) && locacoes !== null ? locacoes / leads : null,
+    leadsPorLocacao: positivo(leads) && positivo(locacoes) ? leads / locacoes : null,
+    leadsPorImovel: positivo(estoque) && positivo(leads) ? leads / estoque : null,
+    receitaPorImovel: positivo(carteira) && positivo(faturamento) ? faturamento / carteira : null,
+    carteiraPorPessoa: positivo(pessoasAdm) && positivo(carteira) ? carteira / pessoasAdm : null,
+    faturamentoPorPessoa: positivo(pessoasAdm) && positivo(faturamento) ? faturamento / pessoasAdm : null,
+  };
+}
+
+export function blocoIndicadores(respostas: Record<string, unknown>, projecao: ProjecaoCarteira | null): string {
+  const i = indicadoresNumericos(respostas);
+  const { carteira, estoque, locacoes, leads, faturamento, pessoasAdm } = i;
 
   const l: string[] = [];
-  if (positivo(estoque) && locacoes !== null) {
-    l.push(`- Velocidade de locação do estoque = ${locacoes} locações ÷ ${estoque} disponíveis = ${pct(locacoes / estoque)} ao mês.`);
-    if (positivo(locacoes))
-      l.push(`- Meses para alugar o estoque atual no ritmo de hoje = ${estoque} ÷ ${locacoes} = ${n1(estoque / locacoes)} meses.`);
+  if (i.velocidadeEstoque !== null) {
+    l.push(`- Velocidade de locação do estoque = ${locacoes} locações ÷ ${estoque} disponíveis = ${pct(i.velocidadeEstoque)} ao mês.`);
+    if (i.mesesEstoque !== null)
+      l.push(`- Meses para alugar o estoque atual no ritmo de hoje = ${estoque} ÷ ${locacoes} = ${n1(i.mesesEstoque)} meses.`);
   }
-  if (positivo(leads) && locacoes !== null) {
-    l.push(`- Conversão de leads em locações = ${locacoes} ÷ ${leads} leads = ${pct(locacoes / leads)} ao mês.`);
-    if (positivo(locacoes)) l.push(`- Leads por locação = ${leads} ÷ ${locacoes} = ${n1(leads / locacoes)}.`);
+  if (i.conversaoLeads !== null) {
+    l.push(`- Conversão de leads em locações = ${locacoes} ÷ ${leads} leads = ${pct(i.conversaoLeads)} ao mês.`);
+    if (i.leadsPorLocacao !== null) l.push(`- Leads por locação = ${leads} ÷ ${locacoes} = ${n1(i.leadsPorLocacao)}.`);
   }
-  if (positivo(estoque) && positivo(leads))
-    l.push(`- Leads por imóvel disponível = ${leads} ÷ ${estoque} = ${n1(leads / estoque)} por mês.`);
-  if (positivo(carteira) && positivo(faturamento))
-    l.push(`- Receita média por imóvel administrado = ${reais(faturamento)} ÷ ${carteira} = ${reais(faturamento / carteira, 2)} por mês.`);
-  if (positivo(pessoasAdm) && positivo(carteira))
-    l.push(`- Carteira por pessoa do administrativo = ${carteira} ÷ ${pessoasAdm} = ${n1(carteira / pessoasAdm)} imóveis.`);
-  if (positivo(pessoasAdm) && positivo(faturamento))
-    l.push(`- Faturamento por pessoa do administrativo = ${reais(faturamento)} ÷ ${pessoasAdm} = ${reais(faturamento / pessoasAdm)} por mês.`);
+  if (i.leadsPorImovel !== null)
+    l.push(`- Leads por imóvel disponível = ${leads} ÷ ${estoque} = ${n1(i.leadsPorImovel)} por mês.`);
+  if (i.receitaPorImovel !== null)
+    l.push(`- Receita média por imóvel administrado = ${reais(faturamento!)} ÷ ${carteira} = ${reais(i.receitaPorImovel, 2)} por mês.`);
+  if (i.carteiraPorPessoa !== null)
+    l.push(`- Carteira por pessoa do administrativo = ${carteira} ÷ ${pessoasAdm} = ${n1(i.carteiraPorPessoa)} imóveis.`);
+  if (i.faturamentoPorPessoa !== null)
+    l.push(`- Faturamento por pessoa do administrativo = ${reais(faturamento!)} ÷ ${pessoasAdm} = ${reais(i.faturamentoPorPessoa)} por mês.`);
 
   const alertas: string[] = [];
   if (positivo(leads) && locacoes !== null && locacoes > leads)

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 const itens = [
   { to: "/admin", label: "Diagnósticos", papeis: ["admin"] },
   { to: "/clientes", label: "Clientes", papeis: ["admin", "cs"] },
+  { to: "/admin/mercado", label: "Mercado", papeis: ["admin"] },
   { to: "/admin/perguntas", label: "Perguntas", papeis: ["admin"] },
   { to: "/admin/prompt", label: "Prompt da IA", papeis: ["admin"] },
   { to: "/admin/base", label: "Base de conhecimento", papeis: ["admin"] },

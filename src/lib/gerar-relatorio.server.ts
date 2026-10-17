@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { chamarComRetry, chaveAnthropic } from "@/lib/anthropic.server";
+import { chaveAnthropic, gerarAteFim } from "@/lib/anthropic.server";
 import { aplicarCorrecoes, registrarRevisao, revisarRelatorio } from "@/lib/auditoria.server";
 import { blocosCalculados } from "@/lib/indicadores-operacao";
 
@@ -210,40 +210,8 @@ export async function executarRelatorio(relatorioId: string) {
         })
         .eq("id", relatorioId);
 
-    /** Uma geração completa: continua respostas longas e só aceita texto encerrado com end_turn. */
-    const gerar = async (): Promise<{ texto: string } | { erro: string }> => {
-      const mensagens: Array<{ role: "user" | "assistant"; content: unknown }> = [
-        { role: "user", content: usuario },
-      ];
-      const partes: string[] = [];
-      for (let trecho = 0; trecho < MAX_TRECHOS; trecho++) {
-        const r = await chamarComRetry(chave, {
-          model: modelo,
-          max_tokens: MAX_TOKENS_RESPOSTA,
-          stream: true,
-          system: sistemaBlocos,
-          messages: mensagens,
-        });
-        uso.entrada += r.usage.input;
-        uso.saida += r.usage.output;
-        uso.cacheCriacao += r.usage.cacheCriacao;
-        uso.cacheLeitura += r.usage.cacheLeitura;
-        if (!r.ok) {
-          console.error("Anthropic erro", r.status, r.erro);
-          return { erro: `Falha na IA (${r.status}): ${r.erro}` };
-        }
-        partes.push(r.texto);
-        if (r.stop === "end_turn") {
-          const texto = partes.join("").trim();
-          return texto ? { texto } : { erro: "A IA não retornou conteúdo." };
-        }
-        if (r.stop === "refusal") return { erro: "A IA recusou gerar o relatório (refusal)." };
-        if (r.stop !== "max_tokens" || !r.texto) break;
-        mensagens.push({ role: "assistant", content: [{ type: "text", text: r.texto }] });
-        mensagens.push({ role: "user", content: "Continue exatamente de onde parou, sem repetir o texto anterior. Termine todas as seções do relatório." });
-      }
-      return { erro: "A IA interrompeu o relatório antes do final. Gere uma nova versão." };
-    };
+    const gerar = () =>
+      gerarAteFim(chave, { model: modelo, max_tokens: MAX_TOKENS_RESPOSTA, system: sistemaBlocos, usuario }, uso, MAX_TRECHOS);
 
     // Revisão automática antes de publicar: corrige trechos pontuais e, se a estrutura
     // estiver comprometida, gera o relatório de novo uma única vez.

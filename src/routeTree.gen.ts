@@ -21,10 +21,12 @@ import { Route as RelatorioCodigoRouteImport } from './routes/relatorio.$codigo'
 import { Route as AuthenticatedAdminApiRouteImport } from './routes/_authenticated/admin_.api'
 import { Route as AuthenticatedAdminBaseRouteImport } from './routes/_authenticated/admin_.base'
 import { Route as AuthenticatedAdminEmailRouteImport } from './routes/_authenticated/admin_.email'
+import { Route as AuthenticatedAdminMercadoRouteImport } from './routes/_authenticated/admin_.mercado'
 import { Route as AuthenticatedAdminPerguntasRouteImport } from './routes/_authenticated/admin_.perguntas'
 import { Route as AuthenticatedAdminPromptRouteImport } from './routes/_authenticated/admin_.prompt'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin_.usuarios'
 import { Route as AuthenticatedAdminDiagnosticoIdRouteImport } from './routes/_authenticated/admin_.diagnostico.$id'
+import { Route as AuthenticatedAdminMercadoRelatorioIdRouteImport } from './routes/_authenticated/admin_.mercado_.relatorio.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -85,6 +87,12 @@ const AuthenticatedAdminEmailRoute = AuthenticatedAdminEmailRouteImport.update({
   path: '/admin/email',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminMercadoRoute =
+  AuthenticatedAdminMercadoRouteImport.update({
+    id: '/admin_/mercado',
+    path: '/admin/mercado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPerguntasRoute =
   AuthenticatedAdminPerguntasRouteImport.update({
     id: '/admin_/perguntas',
@@ -109,6 +117,12 @@ const AuthenticatedAdminDiagnosticoIdRoute =
     path: '/admin/diagnostico/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminMercadoRelatorioIdRoute =
+  AuthenticatedAdminMercadoRelatorioIdRouteImport.update({
+    id: '/admin_/mercado_/relatorio/$id',
+    path: '/admin/mercado/relatorio/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -122,10 +136,12 @@ export interface FileRoutesByFullPath {
   '/admin/api': typeof AuthenticatedAdminApiRoute
   '/admin/base': typeof AuthenticatedAdminBaseRoute
   '/admin/email': typeof AuthenticatedAdminEmailRoute
+  '/admin/mercado': typeof AuthenticatedAdminMercadoRoute
   '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/admin/prompt': typeof AuthenticatedAdminPromptRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/diagnostico/$id': typeof AuthenticatedAdminDiagnosticoIdRoute
+  '/admin/mercado/relatorio/$id': typeof AuthenticatedAdminMercadoRelatorioIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,10 +155,12 @@ export interface FileRoutesByTo {
   '/admin/api': typeof AuthenticatedAdminApiRoute
   '/admin/base': typeof AuthenticatedAdminBaseRoute
   '/admin/email': typeof AuthenticatedAdminEmailRoute
+  '/admin/mercado': typeof AuthenticatedAdminMercadoRoute
   '/admin/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/admin/prompt': typeof AuthenticatedAdminPromptRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/diagnostico/$id': typeof AuthenticatedAdminDiagnosticoIdRoute
+  '/admin/mercado/relatorio/$id': typeof AuthenticatedAdminMercadoRelatorioIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,10 +176,12 @@ export interface FileRoutesById {
   '/_authenticated/admin_/api': typeof AuthenticatedAdminApiRoute
   '/_authenticated/admin_/base': typeof AuthenticatedAdminBaseRoute
   '/_authenticated/admin_/email': typeof AuthenticatedAdminEmailRoute
+  '/_authenticated/admin_/mercado': typeof AuthenticatedAdminMercadoRoute
   '/_authenticated/admin_/perguntas': typeof AuthenticatedAdminPerguntasRoute
   '/_authenticated/admin_/prompt': typeof AuthenticatedAdminPromptRoute
   '/_authenticated/admin_/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/admin_/diagnostico/$id': typeof AuthenticatedAdminDiagnosticoIdRoute
+  '/_authenticated/admin_/mercado_/relatorio/$id': typeof AuthenticatedAdminMercadoRelatorioIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,10 +197,12 @@ export interface FileRouteTypes {
     | '/admin/api'
     | '/admin/base'
     | '/admin/email'
+    | '/admin/mercado'
     | '/admin/perguntas'
     | '/admin/prompt'
     | '/admin/usuarios'
     | '/admin/diagnostico/$id'
+    | '/admin/mercado/relatorio/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,10 +216,12 @@ export interface FileRouteTypes {
     | '/admin/api'
     | '/admin/base'
     | '/admin/email'
+    | '/admin/mercado'
     | '/admin/perguntas'
     | '/admin/prompt'
     | '/admin/usuarios'
     | '/admin/diagnostico/$id'
+    | '/admin/mercado/relatorio/$id'
   id:
     | '__root__'
     | '/'
@@ -212,10 +236,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin_/api'
     | '/_authenticated/admin_/base'
     | '/_authenticated/admin_/email'
+    | '/_authenticated/admin_/mercado'
     | '/_authenticated/admin_/perguntas'
     | '/_authenticated/admin_/prompt'
     | '/_authenticated/admin_/usuarios'
     | '/_authenticated/admin_/diagnostico/$id'
+    | '/_authenticated/admin_/mercado_/relatorio/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -314,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin_/mercado': {
+      id: '/_authenticated/admin_/mercado'
+      path: '/admin/mercado'
+      fullPath: '/admin/mercado'
+      preLoaderRoute: typeof AuthenticatedAdminMercadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin_/perguntas': {
       id: '/_authenticated/admin_/perguntas'
       path: '/admin/perguntas'
@@ -342,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDiagnosticoIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin_/mercado_/relatorio/$id': {
+      id: '/_authenticated/admin_/mercado_/relatorio/$id'
+      path: '/admin/mercado/relatorio/$id'
+      fullPath: '/admin/mercado/relatorio/$id'
+      preLoaderRoute: typeof AuthenticatedAdminMercadoRelatorioIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -351,10 +391,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminApiRoute: typeof AuthenticatedAdminApiRoute
   AuthenticatedAdminBaseRoute: typeof AuthenticatedAdminBaseRoute
   AuthenticatedAdminEmailRoute: typeof AuthenticatedAdminEmailRoute
+  AuthenticatedAdminMercadoRoute: typeof AuthenticatedAdminMercadoRoute
   AuthenticatedAdminPerguntasRoute: typeof AuthenticatedAdminPerguntasRoute
   AuthenticatedAdminPromptRoute: typeof AuthenticatedAdminPromptRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminDiagnosticoIdRoute: typeof AuthenticatedAdminDiagnosticoIdRoute
+  AuthenticatedAdminMercadoRelatorioIdRoute: typeof AuthenticatedAdminMercadoRelatorioIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -363,10 +405,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminApiRoute: AuthenticatedAdminApiRoute,
   AuthenticatedAdminBaseRoute: AuthenticatedAdminBaseRoute,
   AuthenticatedAdminEmailRoute: AuthenticatedAdminEmailRoute,
+  AuthenticatedAdminMercadoRoute: AuthenticatedAdminMercadoRoute,
   AuthenticatedAdminPerguntasRoute: AuthenticatedAdminPerguntasRoute,
   AuthenticatedAdminPromptRoute: AuthenticatedAdminPromptRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminDiagnosticoIdRoute: AuthenticatedAdminDiagnosticoIdRoute,
+  AuthenticatedAdminMercadoRelatorioIdRoute:
+    AuthenticatedAdminMercadoRelatorioIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

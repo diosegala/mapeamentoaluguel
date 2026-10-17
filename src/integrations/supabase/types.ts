@@ -448,6 +448,69 @@ export type Database = {
           },
         ]
       }
+      relatorios_mercado: {
+        Row: {
+          base: string
+          conteudo: string | null
+          created_at: string
+          criado_por: string | null
+          diagnosticos_incluidos: Json
+          erro: string | null
+          filtros: Json
+          id: string
+          modelo: string | null
+          processando_desde: string | null
+          resumo: Json | null
+          status: string
+          tokens_cache_criacao: number | null
+          tokens_cache_leitura: number | null
+          tokens_entrada: number | null
+          tokens_saida: number | null
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          base?: string
+          conteudo?: string | null
+          created_at?: string
+          criado_por?: string | null
+          diagnosticos_incluidos?: Json
+          erro?: string | null
+          filtros?: Json
+          id?: string
+          modelo?: string | null
+          processando_desde?: string | null
+          resumo?: Json | null
+          status?: string
+          tokens_cache_criacao?: number | null
+          tokens_cache_leitura?: number | null
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+          updated_at?: string
+          versao: number
+        }
+        Update: {
+          base?: string
+          conteudo?: string | null
+          created_at?: string
+          criado_por?: string | null
+          diagnosticos_incluidos?: Json
+          erro?: string | null
+          filtros?: Json
+          id?: string
+          modelo?: string | null
+          processando_desde?: string | null
+          resumo?: Json | null
+          status?: string
+          tokens_cache_criacao?: number | null
+          tokens_cache_leitura?: number | null
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: []
+      }
       secoes_formulario: {
         Row: {
           created_at: string

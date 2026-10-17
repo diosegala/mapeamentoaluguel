@@ -109,3 +109,43 @@ export async function chamarComRetry(chave: string, corpo: unknown): Promise<Res
   await new Promise((ok) => setTimeout(ok, 5000));
   return chamarAnthropicStream(chave, corpo);
 }
+
+export type UsoAcumulado = { entrada: number; saida: number; cacheCriacao: number; cacheLeitura: number };
+
+/** Uma geração completa: continua respostas longas e só aceita texto encerrado com end_turn. Soma o uso de todas as chamadas em `uso`. */
+export async function gerarAteFim(
+  chave: string,
+  pedido: { model: string; max_tokens: number; system: unknown; usuario: string },
+  uso: UsoAcumulado,
+  maxTrechos: number,
+): Promise<{ texto: string } | { erro: string }> {
+  const mensagens: Array<{ role: "user" | "assistant"; content: unknown }> = [{ role: "user", content: pedido.usuario }];
+  const partes: string[] = [];
+  for (let trecho = 0; trecho < maxTrechos; trecho++) {
+    const r = await chamarComRetry(chave, {
+      model: pedido.model,
+      max_tokens: pedido.max_tokens,
+      stream: true,
+      system: pedido.system,
+      messages: mensagens,
+    });
+    uso.entrada += r.usage.input;
+    uso.saida += r.usage.output;
+    uso.cacheCriacao += r.usage.cacheCriacao;
+    uso.cacheLeitura += r.usage.cacheLeitura;
+    if (!r.ok) {
+      console.error("Anthropic erro", r.status, r.erro);
+      return { erro: `Falha na IA (${r.status}): ${r.erro}` };
+    }
+    partes.push(r.texto);
+    if (r.stop === "end_turn") {
+      const texto = partes.join("").trim();
+      return texto ? { texto } : { erro: "A IA não retornou conteúdo." };
+    }
+    if (r.stop === "refusal") return { erro: "A IA recusou gerar o relatório (refusal)." };
+    if (r.stop !== "max_tokens" || !r.texto) break;
+    mensagens.push({ role: "assistant", content: [{ type: "text", text: r.texto }] });
+    mensagens.push({ role: "user", content: "Continue exatamente de onde parou, sem repetir o texto anterior. Termine todas as seções do relatório." });
+  }
+  return { erro: "A IA interrompeu o relatório antes do final. Gere uma nova versão." };
+}

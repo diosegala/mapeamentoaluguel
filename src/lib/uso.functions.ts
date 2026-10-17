@@ -127,7 +127,21 @@ export const listarUsoApi = createServerFn({ method: "GET" })
     if (data.diagnostico_id) consultaAud = consultaAud.eq("diagnostico_id", data.diagnostico_id);
     if (data.modelo) consultaAud = consultaAud.eq("modelo", data.modelo);
 
-    const [{ data: linhas, error }, { data: auds }] = await Promise.all([consulta, consultaAud]);
+    // Leituras de mercado não pertencem a um cliente: somem quando o filtro é por cliente.
+    let consultaMercado = context.supabase
+      .from("relatorios_mercado")
+      .select("id, versao, created_at, modelo, tokens_entrada, tokens_saida, tokens_cache_criacao, tokens_cache_leitura, status")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (data.de) consultaMercado = consultaMercado.gte("created_at", `${data.de}T00:00:00Z`);
+    if (data.ate) consultaMercado = consultaMercado.lte("created_at", `${data.ate}T23:59:59Z`);
+    if (data.modelo) consultaMercado = consultaMercado.eq("modelo", data.modelo);
+
+    const [{ data: linhas, error }, { data: auds }, { data: mercado }] = await Promise.all([
+      consulta,
+      consultaAud,
+      data.diagnostico_id ? Promise.resolve({ data: [] as any[] }) : consultaMercado,
+    ]);
     if (error) throw new Error(error.message);
 
     const mapear = (l: any, status: string) => {
@@ -152,5 +166,11 @@ export const listarUsoApi = createServerFn({ method: "GET" })
     return [
       ...(linhas ?? []).map((l: any) => mapear(l, l.status)),
       ...((auds ?? []) as any[]).map((l) => mapear(l, "revisão")),
+      ...((mercado ?? []) as any[]).map((l) => ({
+        ...mapear(l, l.status),
+        cliente: "Leitura de mercado",
+        codigo: `v${l.versao ?? ""}`.replace(/^v$/, "—"),
+        diagnostico_id: "",
+      })),
     ].sort((a, b) => b.created_at.localeCompare(a.created_at));
   });
