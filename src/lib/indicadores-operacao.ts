@@ -5,7 +5,9 @@ import {
   n1,
   num,
   pct,
+  posicaoOperacao,
   projetarCarteira,
+  type PosicaoOperacao,
   type ProjecaoCarteira,
 } from "@/lib/projecao-carteira";
 
@@ -117,7 +119,7 @@ function indicadoresDaProjecao(respostas: Record<string, unknown>): string[] {
   const declarados = lista(respostas["indicadores_acompanhados"]).filter((i) => /reloca|convers(ã|a)o das capta/i.test(i));
   if (!declarados.length) return [];
   return [
-    `- A imobiliária acompanha ${declarados.map((d) => `"${d}"`).join(" e ")}. O questionário não pede esses valores, então a projeção usa as referências. Recomende levar os valores que a imobiliária já acompanha para a projeção; não diga que falta valor registrado nem trate isso como contradição.`,
+    `- A imobiliária acompanha ${declarados.map((d) => `"${d}"`).join(" e ")}. Recomende levar os valores que a imobiliária já acompanha para a projeção, no lugar das referências CUPOLA; não comente se o questionário pede esses valores, não diga que falta valor registrado nem trate isso como contradição.`,
   ];
 }
 
@@ -142,6 +144,8 @@ export type NumerosDestaque = {
   serie: number[];
   locacoesReferencia: number;
   locacoesInformadas: number | null;
+  /** Locações informadas contra as do cenário; "acima" esconde as captações para a meta. */
+  posicao: PosicaoOperacao | null;
   metas: Array<{ meta: number; captacoesMes: number }>;
   conversao: { locacoes: number; leads: number } | null;
 };
@@ -165,6 +169,7 @@ export function numerosDestaque(respostas: Record<string, unknown>): NumerosDest
     serie: p.serie,
     locacoesReferencia: p.desocupacoes * p.trid + p.captacoes * p.tcnc,
     locacoesInformadas: locacoes,
+    posicao: posicaoOperacao(p, locacoes),
     metas: p.metas.map((m) => ({ meta: m.meta, captacoesMes: m.captacoesMes })),
     conversao: positivo(leads) && locacoes !== null ? { locacoes, leads } : null,
   };

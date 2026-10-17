@@ -96,6 +96,8 @@ export function RelatorioCupola({
 
 function Destaques({ numeros }: { numeros: NumerosDestaque }) {
   const metas = numeros.metas;
+  // Acima do cenário, a conversão real supera a TCNC de referência e as captações para a meta superestimariam a necessidade.
+  const acima = numeros.posicao === "acima";
   const faixa = metas.length
     ? metas.length > 1
       ? `meta de +${Math.round(metas[0]!.meta * 100)}% a +${Math.round(metas[metas.length - 1]!.meta * 100)}%`
@@ -110,7 +112,9 @@ function Destaques({ numeros }: { numeros: NumerosDestaque }) {
         `${numeros.crescimento >= 0 ? "+" : "−"}${pct(Math.abs(numeros.crescimento))}`,
         // O cenário supõe TRID e TCNC de referência; as locações reais mostram a distância até ele.
         numeros.locacoesInformadas !== null
-          ? `pressupõe ${decimal(numeros.locacoesReferencia)} locações por mês, hoje são ${inteiro(numeros.locacoesInformadas)}`
+          ? acima
+            ? `cenário abaixo da operação: pressupõe ${decimal(numeros.locacoesReferencia)} locações por mês, hoje são ${inteiro(numeros.locacoesInformadas)}`
+            : `pressupõe ${decimal(numeros.locacoesReferencia)} locações por mês, hoje são ${inteiro(numeros.locacoesInformadas)}`
           : null,
         faixa,
       ]
@@ -118,7 +122,7 @@ function Destaques({ numeros }: { numeros: NumerosDestaque }) {
         .join("; "),
       escuro: true,
     },
-    ...(metas.length
+    ...(metas.length && !acima
       ? [
           {
             rotulo: "Captações para a meta",
@@ -379,6 +383,12 @@ function GraficoCarteira({ numeros }: { numeros: NumerosDestaque }) {
             </span>
           )}
         </span>
+        {numeros.posicao === "acima" && numeros.locacoesInformadas !== null && (
+          <span className="text-[13px] leading-[1.5] text-foreground-muted">
+            A operação aluga {inteiro(numeros.locacoesInformadas)} imóveis por mês, acima das {decimal(numeros.locacoesReferencia)} que
+            este cenário pressupõe: a carteira real tende a ficar acima desta linha.
+          </span>
+        )}
       </figcaption>
       <div className="relative">
         <svg
