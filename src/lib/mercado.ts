@@ -1,7 +1,13 @@
 // Leitura de mercado: agrega as respostas de todos os clientes. Funções puras, usadas pelo
 // dashboard, pela planilha e pelo relatório da liderança, para os três mostrarem os mesmos números.
 import { indicadoresNumericos } from "@/lib/indicadores-operacao";
-import { metasDoTexto, num, projetarCarteira } from "@/lib/projecao-carteira";
+import {
+  metasDoTexto,
+  num,
+  posicaoOperacao,
+  projetarCarteira,
+  type PosicaoOperacao,
+} from "@/lib/projecao-carteira";
 
 export type PerguntaMercado = {
   chave: string;
@@ -165,7 +171,16 @@ export const INDICADORES: Indicador[] = [
   {
     chave: "crescimento",
     rotulo: "Crescimento em 12 meses",
-    explicacao: "Projeção nas referências CUPOLA (TRID 60%, TCNC 30%)",
+    explicacao:
+      "Cenário de referência CUPOLA (TRID 60%, TCNC 30%), não a trajetória da imobiliária",
+    formato: "pct",
+    melhor: "maior",
+  },
+  {
+    chave: "locacoesVsCenario",
+    rotulo: "Locações ÷ cenário",
+    explicacao:
+      "Locações informadas ÷ locações que o cenário de referência pressupõe; acima de 100%, a operação aluga mais que a referência",
     formato: "pct",
     melhor: "maior",
   },
@@ -201,15 +216,31 @@ export const INDICADORES: Indicador[] = [
 
 export type ValoresIndicadores = Record<string, number | null>;
 
-/** Indicadores de um cliente, com as mesmas fórmulas do relatório individual. */
-export function indicadoresDoCliente(respostas: Record<string, unknown>): ValoresIndicadores {
-  const i = indicadoresNumericos(respostas);
-  const p = projetarCarteira({
+const projecaoDo = (respostas: Record<string, unknown>) =>
+  projetarCarteira({
     carteira: respostas["imoveis_administrados"],
     desocupacoes: respostas["desocupacoes_mes"],
     captacoes: respostas["captacoes_mes"],
     metas: metasDoTexto(respostas["meta_12_meses"]),
   });
+
+/** Onde a operação está frente ao cenário de referência (mesma regra do relatório individual). */
+export function posicaoDoCliente(respostas: Record<string, unknown>): PosicaoOperacao | null {
+  const p = projecaoDo(respostas);
+  return p ? posicaoOperacao(p, num(respostas["locacoes_mes"])) : null;
+}
+
+export const ROTULOS_POSICAO: Record<PosicaoOperacao, string> = {
+  acima: "acima da referência",
+  proxima: "perto da referência",
+  abaixo: "abaixo da referência",
+};
+
+/** Indicadores de um cliente, com as mesmas fórmulas do relatório individual. */
+export function indicadoresDoCliente(respostas: Record<string, unknown>): ValoresIndicadores {
+  const i = indicadoresNumericos(respostas);
+  const p = projecaoDo(respostas);
+  const pressupostas = p ? p.desocupacoes * p.trid + p.captacoes * p.tcnc : 0;
   return {
     carteira: i.carteira,
     faturamento: i.faturamento,
@@ -220,6 +251,7 @@ export function indicadoresDoCliente(respostas: Record<string, unknown>): Valore
     tdca: p?.tdca ?? null,
     icca: p?.icca ?? null,
     crescimento: p?.crescimento ?? null,
+    locacoesVsCenario: pressupostas > 0 && i.locacoes !== null ? i.locacoes / pressupostas : null,
     carteiraPorPessoa: i.carteiraPorPessoa,
     faturamentoPorPessoa: i.faturamentoPorPessoa,
     inadimplencia: num(respostas["inadimplencia"]),

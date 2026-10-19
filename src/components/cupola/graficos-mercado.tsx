@@ -78,7 +78,8 @@ export function PontosIndicador({
   est: Estatisticas | null;
   pontos: Array<{ nome: string; valor: number }>;
 }) {
-  const W = 520;
+  // Largura menor que a da tela: no PDF, em duas colunas, os rótulos continuam legíveis.
+  const W = 440;
   const H = 96;
   const m = { l: 12, r: 12 };
   const eixoY = 66;
@@ -186,7 +187,7 @@ export function PontosIndicador({
             x={x(est.min)}
             y={H - 10}
             textAnchor={alinhar(x(est.min))}
-            fontSize={12}
+            fontSize={13}
             fill="var(--color-foreground-subtle)"
           >
             {formatar(est.min, ind.formato)}
@@ -195,7 +196,7 @@ export function PontosIndicador({
             x={x(est.max)}
             y={H - 10}
             textAnchor={alinhar(x(est.max))}
-            fontSize={12}
+            fontSize={13}
             fill="var(--color-foreground-subtle)"
           >
             {formatar(est.max, ind.formato)}

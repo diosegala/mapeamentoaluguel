@@ -1,17 +1,20 @@
 // Relatório consolidado para a liderança da CUPOLA. Roda na mesma fila dos relatórios de cliente,
 // depois deles, e usa os números de mercado.ts como oficiais.
-import PROMPT_MERCADO from "../../prompts/mercado-v1.md?raw";
+import PROMPT_MERCADO from "../../prompts/mercado-v2.md?raw";
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { chaveAnthropic, gerarAteFim, type UsoAcumulado } from "@/lib/anthropic.server";
 import {
   DORES,
   INDICADORES,
+  ROTULOS_POSICAO,
   aplicarFiltros,
   descreverFiltros,
   ehDor,
   formatar,
   lerMercado,
+  posicaoDoCliente,
+  textoResposta,
   type Filtros,
   type LeituraMercado,
 } from "@/lib/mercado";
@@ -104,16 +107,26 @@ function montarContexto(
   blocos.push(
     [
       "<indicadores_por_cliente>",
-      linha("Imobiliária", "Cidade/UF", ...INDICADORES.map((i) => i.rotulo)),
-      linha("---", "---", ...INDICADORES.map(() => "---")),
-      ...l.indicadores.map(({ cliente, valores }) =>
-        linha(
+      linha(
+        "Imobiliária",
+        "Cidade/UF",
+        "Meta 12 meses",
+        "Posição frente ao cenário",
+        ...INDICADORES.map((i) => i.rotulo),
+      ),
+      linha("---", "---", "---", "---", ...INDICADORES.map(() => "---")),
+      ...l.indicadores.map(({ cliente, valores }) => {
+        const posicao = posicaoDoCliente(cliente.respostas);
+        return linha(
           cliente.nome,
           `${cliente.cidade}/${cliente.estado}`,
+          textoResposta(cliente.respostas["meta_12_meses"]) || "—",
+          posicao ? ROTULOS_POSICAO[posicao] : "—",
           ...INDICADORES.map((i) => formatar(valores[i.chave], i.formato)),
-        ),
-      ),
+        );
+      }),
       "",
+      "Posição frente ao cenário: acima quando as locações informadas passam de 110% das que o cenário de referência pressupõe; abaixo quando ficam em menos de 90%; perto entre os dois.",
       "Como cada indicador é calculado:",
       ...INDICADORES.map(
         (i) => `- ${i.rotulo}: ${i.explicacao}.${i.melhor ? ` Melhor quanto ${i.melhor}.` : ""}`,

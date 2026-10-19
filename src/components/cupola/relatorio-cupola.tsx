@@ -10,8 +10,41 @@ const inteiro = (x: number) => Math.round(x).toLocaleString("pt-BR");
 /** Uma casa decimal só quando necessária, como no texto do relatório (40,3). */
 const decimal = (x: number) => (Math.round(x * 10) / 10).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 
+export const dataPorExtenso = (iso: string | null) =>
+  new Date(iso ?? Date.now()).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+
+/** Capa escura dos relatórios impressos: logo, rótulo, título e linha de detalhes. */
+export function CapaRelatorio({
+  rotulo,
+  titulo,
+  detalhes,
+  acoes,
+}: {
+  rotulo: string;
+  titulo: string;
+  detalhes: Array<string | null | undefined>;
+  acoes?: ReactNode;
+}) {
+  return (
+    <header className="relatorio-capa bg-dark-background text-foreground-on-dark">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10 px-5 pt-7 pb-24 sm:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <img src="/brand/cupola-branca.png" alt="CUPOLA" className="capa-logo h-8 w-auto" />
+          {acoes && <div className="print-hidden flex flex-wrap gap-2">{acoes}</div>}
+        </div>
+        <img src="/brand/cupola-simbolo.png" alt="" className="capa-simbolo hidden" />
+        <div className="grid gap-4">
+          <span className="text-[12px] font-bold tracking-[0.16em] text-primary uppercase">{rotulo}</span>
+          <h1 className="titulo-marca text-[30px] sm:text-[46px]">{titulo}</h1>
+          <p className="text-[15px] text-[#9ea2a8]">{detalhes.filter(Boolean).join(" · ")}</p>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 /** Markdown do relatório; em modo inline, sem parágrafos em volta. */
-function Md({ texto, inline }: { texto: string; inline?: boolean }) {
+export function Md({ texto, inline }: { texto: string; inline?: boolean }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -22,7 +55,7 @@ function Md({ texto, inline }: { texto: string; inline?: boolean }) {
   );
 }
 
-const prosa =
+export const prosa =
   "space-y-4 text-[17px] leading-[1.65] text-foreground [&_li]:ml-5 [&_ol]:list-decimal [&_ol]:space-y-1 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:space-y-1";
 
 export function RelatorioCupola({
@@ -32,8 +65,6 @@ export function RelatorioCupola({
   geradoEm,
   numeros,
   acoes,
-  rotulo = "Diagnóstico da operação de locação",
-  destaques,
 }: {
   conteudo: string;
   nome: string;
@@ -41,41 +72,20 @@ export function RelatorioCupola({
   geradoEm: string | null;
   numeros: NumerosDestaque | null;
   acoes?: ReactNode;
-  /** Linha acima do título da capa. */
-  rotulo?: string;
-  /** Cartões no lugar dos números do cliente (ex.: leitura de mercado). */
-  destaques?: ReactNode;
 }) {
   const { introducao, secoes } = useMemo(() => dividirSecoes(conteudo), [conteudo]);
-  const data = new Date(geradoEm ?? Date.now()).toLocaleDateString("pt-BR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 
   return (
     <article className="relatorio-pdf">
-      <header className="relatorio-capa bg-dark-background text-foreground-on-dark">
-        <div className="mx-auto flex max-w-5xl flex-col gap-10 px-5 pt-7 pb-24 sm:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <img src="/brand/cupola-branca.png" alt="CUPOLA" className="capa-logo h-8 w-auto" />
-            {acoes && <div className="print-hidden flex flex-wrap gap-2">{acoes}</div>}
-          </div>
-          <img src="/brand/cupola-simbolo.png" alt="" className="capa-simbolo hidden" />
-          <div className="grid gap-4">
-            <span className="text-[12px] font-bold tracking-[0.16em] text-primary uppercase">
-              {rotulo}
-            </span>
-            <h1 className="titulo-marca text-[30px] sm:text-[46px]">{nome}</h1>
-            <p className="text-[15px] text-[#9ea2a8]">
-              {[local, `Gerado em ${data}`, "Imersão Cupola Aluguel"].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-        </div>
-      </header>
+      <CapaRelatorio
+        rotulo="Diagnóstico da operação de locação"
+        titulo={nome}
+        detalhes={[local, `Gerado em ${dataPorExtenso(geradoEm)}`, "Imersão Cupola Aluguel"]}
+        acoes={acoes}
+      />
 
       <div className="relatorio-conteudo mx-auto grid max-w-5xl gap-12 px-5 pb-20 sm:px-8">
-        {destaques ?? (numeros ? <Destaques numeros={numeros} /> : <div className="h-4" />)}
+        {numeros ? <Destaques numeros={numeros} /> : <div className="h-4" />}
         {introducao && (
           <div className={`max-w-3xl ${prosa}`}>
             <Md texto={introducao} />
@@ -164,9 +174,9 @@ function Destaques({ numeros }: { numeros: NumerosDestaque }) {
   );
 }
 
-function Cabecalho({ secao }: { secao: Secao }) {
+export function Cabecalho({ secao }: { secao: Secao }) {
   return (
-    <div className="grid gap-1">
+    <div className="cabecalho-secao grid gap-1">
       {secao.numero && <span className="titulo-marca text-[13px] text-foreground-subtle">{secao.numero.padStart(2, "0")}</span>}
       <h2 className="titulo-marca text-[20px] sm:text-[22px]">{secao.titulo}</h2>
     </div>

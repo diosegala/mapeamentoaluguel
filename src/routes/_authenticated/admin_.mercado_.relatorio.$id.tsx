@@ -1,24 +1,39 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useMemo } from "react";
 import { Download } from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
-import { RelatorioCupola } from "@/components/cupola/relatorio-cupola";
+import { RelatorioMercado } from "@/components/cupola/relatorio-mercado";
 import { Button } from "@/components/ui/button";
-import { formatar } from "@/lib/mercado";
-import { lerRelatorioMercado } from "@/lib/mercado.functions";
+import { lerMercado } from "@/lib/mercado";
+import { dadosMercado, lerRelatorioMercado } from "@/lib/mercado.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/mercado_/relatorio/$id")({
   head: () => ({ meta: [{ title: "Leitura de mercado | CUPOLA" }] }),
-  component: RelatorioMercado,
+  component: PaginaRelatorioMercado,
 });
 
-function RelatorioMercado() {
+function PaginaRelatorioMercado() {
   const { id } = Route.useParams();
   const ler = useServerFn(lerRelatorioMercado);
+  const buscarDados = useServerFn(dadosMercado);
   const q = useQuery({ queryKey: ["relatorio-mercado", id], queryFn: () => ler({ data: { id } }) });
+  const dados = useQuery({ queryKey: ["mercado"], queryFn: () => buscarDados() });
   const r = q.data;
+
+  // Os gráficos usam as mesmas imobiliárias que entraram no texto.
+  const leitura = useMemo(() => {
+    if (!r || !dados.data) return null;
+    const ids = new Set(r.diagnosticos_incluidos);
+    return lerMercado(
+      dados.data.perguntas,
+      dados.data.clientes.filter((c) => ids.has(c.id)),
+    );
+  }, [r, dados.data]);
+  const nomeSecao = (n: number) =>
+    dados.data?.secoes.find((s) => s.numero === n)?.nome ?? `Seção ${n}`;
 
   return (
     <main className="min-h-screen bg-background print:bg-white">
@@ -45,14 +60,13 @@ function RelatorioMercado() {
       )}
       {r?.conteudo && (
         <>
-          <RelatorioCupola
+          <RelatorioMercado
             conteudo={r.conteudo}
-            nome="Leitura de mercado"
-            rotulo={`Relatório para a liderança CUPOLA · versão ${r.versao}`}
-            local={`Base: ${r.base}`}
+            versao={r.versao}
+            base={r.base}
             geradoEm={r.created_at}
-            numeros={null}
-            destaques={r.resumo ? <Resumo resumo={r.resumo} /> : undefined}
+            leitura={leitura}
+            nomeSecao={nomeSecao}
             acoes={
               <>
                 <Button
@@ -62,7 +76,7 @@ function RelatorioMercado() {
                 >
                   <Link to="/admin/mercado">Voltar ao painel</Link>
                 </Button>
-                <Button onClick={() => window.print()}>
+                <Button onClick={() => window.print()} disabled={!leitura}>
                   <Download /> Baixar PDF
                 </Button>
               </>
@@ -76,74 +90,5 @@ function RelatorioMercado() {
         </>
       )}
     </main>
-  );
-}
-
-function Resumo({
-  resumo,
-}: {
-  resumo: {
-    n: number;
-    carteiraMediana: number | null;
-    conversaoMediana: number | null;
-    crescimentoMediana: number | null;
-    iaEstruturada: string | null;
-  };
-}) {
-  const cartoes = [
-    {
-      rotulo: "Imobiliárias na leitura",
-      valor: String(resumo.n),
-      detalhe: "questionários concluídos",
-      escuro: false,
-    },
-    {
-      rotulo: "Carteira mediana",
-      valor: formatar(resumo.carteiraMediana, "inteiro"),
-      detalhe: "imóveis administrados",
-      escuro: false,
-    },
-    {
-      rotulo: "Crescimento em 12 meses, mediana",
-      valor: formatar(resumo.crescimentoMediana, "pct"),
-      detalhe: "no cenário de referência CUPOLA",
-      escuro: true,
-    },
-    {
-      rotulo: "Conversão de leads, mediana",
-      valor: formatar(resumo.conversaoMediana, "pct"),
-      detalhe: "locações ÷ leads por mês",
-      escuro: false,
-    },
-    {
-      rotulo: "Usam IA de forma estruturada",
-      valor: resumo.iaEstruturada ?? "—",
-      detalhe: "imobiliárias",
-      escuro: false,
-    },
-  ];
-  return (
-    <div className="destaques -mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-      {cartoes.map((c) => (
-        <div
-          key={c.rotulo}
-          className={`grid content-start gap-1 rounded-2xl border p-5 ${
-            c.escuro
-              ? "border-dark-background bg-dark-background text-foreground-on-dark"
-              : "border-border bg-card"
-          }`}
-        >
-          <span
-            className={`text-[13px] font-semibold ${c.escuro ? "text-primary" : "text-foreground-muted"}`}
-          >
-            {c.rotulo}
-          </span>
-          <span className="titulo-marca text-[26px] leading-[1.6] tabular-nums">{c.valor}</span>
-          <span className={`text-[13px] ${c.escuro ? "text-[#9ea2a8]" : "text-foreground-subtle"}`}>
-            {c.detalhe}
-          </span>
-        </div>
-      ))}
-    </div>
   );
 }

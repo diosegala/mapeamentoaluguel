@@ -124,19 +124,16 @@ export const lerRelatorioMercado = createServerFn({ method: "GET" })
     await garantirPapel(context.supabase, context.userId, ["admin"]);
     const { data: r, error } = await context.supabase
       .from("relatorios_mercado")
-      .select("id, versao, status, erro, base, conteudo, resumo, created_at")
+      .select("id, versao, status, erro, base, conteudo, diagnosticos_incluidos, created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!r) throw new Error("Relatório não encontrado.");
     return {
       ...r,
-      resumo: (r.resumo ?? null) as {
-        n: number;
-        carteiraMediana: number | null;
-        conversaoMediana: number | null;
-        crescimentoMediana: number | null;
-        iaEstruturada: string | null;
-      } | null,
+      diagnosticos_incluidos: (Array.isArray(r.diagnosticos_incluidos)
+        ? r.diagnosticos_incluidos
+        : []
+      ).map(String),
     };
   });
