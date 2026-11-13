@@ -26,6 +26,10 @@ function RedefinirSenha() {
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [salvando, setSalvando] = useState(false);
+  // Primeiro acesso por convite: mesma tela, com textos de criação de senha.
+  const [convite] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("convite") === "1",
+  );
   const verificado = useRef(false);
 
   // O link traz um token de uso único; trocá-lo por uma sessão permite definir a senha nova.
@@ -39,7 +43,7 @@ function RedefinirSenha() {
         const { error } = await supabase.auth.verifyOtp({ token_hash: token, type: "recovery" });
         if (!error) {
           // Tira o token do endereço para não ficar no histórico do navegador.
-          window.history.replaceState(null, "", "/redefinir-senha");
+          window.history.replaceState(null, "", convite ? "/redefinir-senha?convite=1" : "/redefinir-senha");
           return setEstado("pronto");
         }
       }
@@ -47,7 +51,7 @@ function RedefinirSenha() {
       const { data } = await supabase.auth.getSession();
       setEstado(data.session ? "pronto" : "invalido");
     })();
-  }, []);
+  }, [convite]);
 
   async function salvar(event: React.FormEvent) {
     event.preventDefault();
@@ -59,7 +63,7 @@ function RedefinirSenha() {
     try {
       const { data, error } = await supabase.auth.updateUser({ password: senha });
       if (error) throw error;
-      toast.success("Senha redefinida.");
+      toast.success(convite ? "Senha criada." : "Senha redefinida.");
       const { data: linhas } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
       const papel = papelPrincipal((linhas ?? []).map((l) => l.role as string));
       navigate({ to: papel ? inicioDoPapel(papel) : "/auth" });
@@ -74,14 +78,16 @@ function RedefinirSenha() {
     <main className="flex min-h-screen items-center justify-center bg-dark-background px-6">
       <div className="w-full max-w-md rounded-2xl bg-card p-8">
         <img src="/brand/cupola.png" alt="CUPOLA" className="h-8 w-auto" />
-        <h1 className="titulo-marca mt-8 text-[20px]">Nova senha</h1>
+        <h1 className="titulo-marca mt-8 text-[20px]">{convite ? "Crie sua senha" : "Nova senha"}</h1>
 
         {estado === "verificando" && <p className="mt-3 text-sm text-foreground-muted">Validando o link...</p>}
 
         {estado === "invalido" && (
           <>
             <p className="mt-3 text-sm text-foreground-muted">
-              Este link expirou ou já foi usado. Peça um novo na tela de login, em "Esqueci minha senha".
+              {convite
+                ? "Este convite expirou ou já foi usado. Peça um novo a quem liberou seu acesso, ou use \"Esqueci minha senha\" na tela de login com o e-mail do convite."
+                : "Este link expirou ou já foi usado. Peça um novo na tela de login, em \"Esqueci minha senha\"."}
             </p>
             <Link to="/auth" className="mt-6 inline-block text-[13px] font-semibold text-foreground-muted underline">
               Ir para o login
@@ -121,7 +127,7 @@ function RedefinirSenha() {
               />
             </div>
             <Button type="submit" size="lg" className="w-full" disabled={salvando}>
-              {salvando ? "Salvando..." : "Salvar nova senha"}
+              {salvando ? "Salvando..." : convite ? "Criar senha e entrar" : "Salvar nova senha"}
             </Button>
           </form>
         )}

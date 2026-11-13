@@ -8,6 +8,13 @@ export const ROTULOS_PAPEL: Record<Papel, string> = {
   mentor: "Mentor",
 };
 
+/** O que cada papel pode fazer, na tela de usuários e no e-mail de convite. */
+export const DESCRICAO_PAPEL: Record<Papel, string> = {
+  admin: "Acesso completo: relatórios, revisão, prompt, configurações e usuários.",
+  cs: "Cadastra clientes, envia o link do questionário e acompanha o preenchimento. Não vê relatórios nem configurações.",
+  mentor: "Lê os diagnósticos publicados e a leitura de mercado. Não cadastra, edita, gera nem envia nada.",
+};
+
 /** Papel mais amplo de uma lista de papéis (admin > cs > mentor), ou null sem acesso. */
 export function papelPrincipal(papeis: string[]): Papel | null {
   if (papeis.includes("admin")) return "admin";

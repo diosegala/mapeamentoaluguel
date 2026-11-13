@@ -3,15 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Copy, Mail, Trash2 } from "lucide-react";
 
 import { AdminNav } from "@/components/cupola/admin-nav";
 import { AlterarSenha } from "@/components/cupola/alterar-senha";
-import { CampoSenha } from "@/components/cupola/campo-senha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ROTULOS_PAPEL, type Papel } from "@/lib/papeis";
-import { criarUsuario, listarUsuarios, removerUsuario } from "@/lib/usuarios.functions";
+import { DESCRICAO_PAPEL, ROTULOS_PAPEL, type Papel } from "@/lib/papeis";
+import { criarUsuario, listarUsuarios, reenviarConvite, removerUsuario } from "@/lib/usuarios.functions";
 
 export const Route = createFileRoute("/_authenticated/admin_/usuarios")({
   head: () => ({
@@ -23,11 +22,8 @@ export const Route = createFileRoute("/_authenticated/admin_/usuarios")({
   component: Usuarios,
 });
 
-const DESCRICAO_PAPEL: Record<Papel, string> = {
-  admin: "Acesso completo: relatórios, revisão, prompt, configurações e usuários.",
-  cs: "Cadastra clientes, envia o link do questionário e acompanha o preenchimento. Não vê relatórios nem configurações.",
-  mentor: "Lê os diagnósticos publicados e a leitura de mercado. Não cadastra, edita, gera nem envia nada.",
-};
+/** Convite que não saiu por e-mail: o admin copia o link e manda por outro canal. */
+type ConviteManual = { email: string; link: string; erro: string | null };
 
 type Usuario = {
   user_id: string;
@@ -43,22 +39,38 @@ function Usuarios() {
   const listar = useServerFn(listarUsuarios);
   const criar = useServerFn(criarUsuario);
   const remover = useServerFn(removerUsuario);
+  const reenviar = useServerFn(reenviarConvite);
 
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
   const [papel, setPapel] = useState<Papel>("cs");
+  const [manual, setManual] = useState<ConviteManual | null>(null);
+
+  function tratarEnvio(r: { email: string; enviado: boolean; erroEnvio: string | null; link: string | null }, sucesso: string) {
+    if (r.enviado) {
+      setManual(null);
+      toast.success(sucesso);
+    } else {
+      setManual({ email: r.email, link: r.link ?? "", erro: r.erroEnvio });
+      toast.error(`O e-mail para ${r.email} não saiu. Copie o link abaixo e envie por outro canal.`);
+    }
+  }
 
   const { data, isLoading, error } = useQuery({ queryKey: ["usuarios"], queryFn: () => listar() });
 
   const criarMut = useMutation({
-    mutationFn: () => criar({ data: { email, senha, papel } }),
+    mutationFn: () => criar({ data: { email, papel } }),
     onSuccess: (novo) => {
-      toast.success(`Acesso de ${ROTULOS_PAPEL[novo.papel]} liberado para ${novo.email}`);
+      tratarEnvio(novo, `Acesso de ${ROTULOS_PAPEL[novo.papel]} liberado. Convite enviado para ${novo.email}.`);
       setEmail("");
-      setSenha("");
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar usuário."),
+  });
+
+  const reenviarMut = useMutation({
+    mutationFn: (user_id: string) => reenviar({ data: { user_id } }),
+    onSuccess: (r) => tratarEnvio(r, `Convite reenviado para ${r.email}.`),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar o convite."),
   });
 
   const removerMut = useMutation({
@@ -80,8 +92,9 @@ function Usuarios() {
         <section className="rounded-2xl border border-border bg-card p-6">
           <h1 className="titulo-marca text-[20px]">Novo usuário</h1>
           <p className="mt-1 text-sm text-foreground-muted">
-            Informe o e-mail, uma senha inicial e o papel. Se a pessoa já tiver conta, a senha e o papel são atualizados. Quem
-            esquecer a senha pode redefinir sozinho pela tela de login, em "Esqueci minha senha".
+            Informe o e-mail e o papel. A pessoa recebe um convite por e-mail com um link para criar a própria senha. Se ela
+            já tiver conta, só o papel muda e ela recebe um aviso. Quem esquecer a senha pode redefinir sozinho pela tela de
+            login, em "Esqueci minha senha".
           </p>
           <form
             className="mt-5 grid gap-4"
@@ -90,8 +103,8 @@ function Usuarios() {
               criarMut.mutate();
             }}
           >
-            <div className="grid gap-3 md:grid-cols-[2fr_1.5fr]">
-              {/* Sem preenchimento automático: o navegador não deve colar aqui o e-mail e a senha de quem está logado. */}
+            <div className="grid gap-3 md:max-w-md">
+              {/* Sem preenchimento automático: o navegador não deve colar aqui o e-mail de quem está logado. */}
               <Input
                 id="novo-email"
                 name="novo-usuario-email"
@@ -101,17 +114,6 @@ function Usuarios() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11"
-              />
-              <CampoSenha
-                id="nova-senha-inicial"
-                name="novo-usuario-senha"
-                autoComplete="new-password"
-                placeholder="Senha inicial (mín. 8)"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-                minLength={8}
                 className="h-11"
               />
             </div>
@@ -141,10 +143,36 @@ function Usuarios() {
             </fieldset>
             <div>
               <Button type="submit" className="h-11 px-6" disabled={criarMut.isPending}>
-                {criarMut.isPending ? "Salvando..." : "Criar acesso"}
+                {criarMut.isPending ? "Enviando convite..." : "Criar acesso e enviar convite"}
               </Button>
             </div>
           </form>
+          {manual && (
+            <div className="mt-5 grid gap-2 rounded-2xl border border-destructive bg-destructive/10 p-4 text-sm">
+              <p className="font-semibold text-destructive">O convite para {manual.email} não saiu por e-mail.</p>
+              <p className="text-foreground-muted">
+                O acesso já está liberado. Copie o link e envie para a pessoa por WhatsApp ou outro canal. Ele vale por tempo
+                limitado e só pode ser usado uma vez; se expirar, use "Reenviar convite" na lista abaixo.
+              </p>
+              {manual.erro && <p className="text-[12px] text-foreground-subtle">Motivo: {manual.erro}</p>}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => {
+                    navigator.clipboard.writeText(manual.link);
+                    toast.success("Link copiado");
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" /> Copiar link
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setManual(null)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
 
         <section>
@@ -183,10 +211,22 @@ function Usuarios() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-foreground-subtle">
-                        {u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString("pt-BR") : "—"}
+                        {u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString("pt-BR") : "Convite pendente"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {u.eu ? null : (
+                          <div className="flex items-center justify-end gap-1">
+                          {!u.ultimo_acesso && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1"
+                              disabled={reenviarMut.isPending}
+                              onClick={() => reenviarMut.mutate(u.user_id)}
+                            >
+                              <Mail className="h-3.5 w-3.5" /> Reenviar convite
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -196,6 +236,7 @@ function Usuarios() {
                           >
                             <Trash2 className="h-3.5 w-3.5" /> Remover acesso
                           </Button>
+                          </div>
                         )}
                       </td>
                     </tr>
