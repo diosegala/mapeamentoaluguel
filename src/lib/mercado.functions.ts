@@ -66,7 +66,8 @@ export async function carregarMercado(supabase: any): Promise<{
 export const dadosMercado = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await garantirPapel(context.supabase, context.userId, ["admin"]);
+    // Admin e mentor leem com a própria sessão; o RLS limita o mentor a diagnósticos concluídos.
+    await garantirPapel(context.supabase, context.userId, ["admin", "mentor"]);
     return carregarMercado(context.supabase);
   });
 
@@ -94,14 +95,17 @@ export const gerarRelatorioMercado = createServerFn({ method: "POST" })
 export const listarRelatoriosMercado = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await garantirPapel(context.supabase, context.userId, ["admin"]);
-    const { data, error } = await context.supabase
+    const papel = await garantirPapel(context.supabase, context.userId, ["admin", "mentor"]);
+    let consulta = context.supabase
       .from("relatorios_mercado")
       .select(
         "id, versao, status, erro, base, diagnosticos_incluidos, modelo, tokens_entrada, tokens_saida, created_at",
       )
       .order("versao", { ascending: false })
       .limit(50);
+    // O mentor só vê versões prontas (o RLS já garante; o filtro deixa isso explícito).
+    if (papel === "mentor") consulta = consulta.eq("status", "concluido");
+    const { data, error } = await consulta;
     if (error) throw new Error(error.message);
     return (data ?? []).map((r) => ({
       id: r.id,
@@ -121,14 +125,14 @@ export const lerRelatorioMercado = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    await garantirPapel(context.supabase, context.userId, ["admin"]);
+    const papel = await garantirPapel(context.supabase, context.userId, ["admin", "mentor"]);
     const { data: r, error } = await context.supabase
       .from("relatorios_mercado")
       .select("id, versao, status, erro, base, conteudo, diagnosticos_incluidos, created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!r) throw new Error("Relatório não encontrado.");
+    if (!r || (papel === "mentor" && r.status !== "concluido")) throw new Error("Relatório não encontrado.");
     return {
       ...r,
       diagnosticos_incluidos: (Array.isArray(r.diagnosticos_incluidos)

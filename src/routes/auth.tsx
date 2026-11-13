@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CampoSenha } from "@/components/cupola/campo-senha";
 import { supabase } from "@/integrations/supabase/client";
+import { inicioDoPapel, papelPrincipal } from "@/lib/papeis";
 import { solicitarRedefinicaoSenha } from "@/lib/senha.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -60,9 +61,8 @@ function AuthPage() {
         );
       }
       const { data: linhas } = await supabase.from("user_roles").select("role").eq("user_id", sessao.user.id);
-      const papeis = (linhas ?? []).map((l) => l.role as string);
-      if (papeis.includes("admin")) navigate({ to: "/admin" });
-      else if (papeis.includes("cs")) navigate({ to: "/clientes" });
+      const papel = papelPrincipal((linhas ?? []).map((l) => l.role as string));
+      if (papel) navigate({ to: inicioDoPapel(papel) });
       else {
         await supabase.auth.signOut();
         throw new Error("Seu usuário ainda não tem acesso ao painel. Fale com um administrador da CUPOLA.");

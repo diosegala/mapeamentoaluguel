@@ -4,11 +4,14 @@ import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { inicioDoPapel } from "@/lib/papeis";
+
+const SELO = { admin: "Painel", cs: "Atendimento", mentor: "Mentoria" } as const;
 
 const itens = [
-  { to: "/admin", label: "Diagnósticos", papeis: ["admin"] },
+  { to: "/admin", label: "Diagnósticos", papeis: ["admin", "mentor"] },
   { to: "/clientes", label: "Clientes", papeis: ["admin", "cs"] },
-  { to: "/admin/mercado", label: "Mercado", papeis: ["admin"] },
+  { to: "/admin/mercado", label: "Mercado", papeis: ["admin", "mentor"] },
   { to: "/admin/perguntas", label: "Perguntas", papeis: ["admin"] },
   { to: "/admin/prompt", label: "Prompt da IA", papeis: ["admin"] },
   { to: "/admin/base", label: "Base de conhecimento", papeis: ["admin"] },
@@ -33,10 +36,10 @@ export function AdminNav() {
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-5">
-          <Link to={papel === "admin" ? "/admin" : "/clientes"} className="flex items-center gap-3">
+          <Link to={inicioDoPapel(papel)} className="flex items-center gap-3">
             <img src="/brand/cupola.png" alt="CUPOLA" className="h-7 w-auto" />
             <span className="rounded-full bg-foreground px-2.5 py-0.5 text-[11px] font-semibold tracking-[0.12em] text-primary uppercase">
-              {papel === "admin" ? "Painel" : "Atendimento"}
+              {SELO[papel]}
             </span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">

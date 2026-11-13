@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin_/usuarios")({
 const DESCRICAO_PAPEL: Record<Papel, string> = {
   admin: "Acesso completo: relatórios, revisão, prompt, configurações e usuários.",
   cs: "Cadastra clientes, envia o link do questionário e acompanha o preenchimento. Não vê relatórios nem configurações.",
+  mentor: "Lê os diagnósticos publicados e a leitura de mercado. Não cadastra, edita, gera nem envia nada.",
 };
 
 type Usuario = {
@@ -114,9 +115,9 @@ function Usuarios() {
                 className="h-11"
               />
             </div>
-            <fieldset className="grid gap-2 sm:grid-cols-2">
+            <fieldset className="grid gap-2 sm:grid-cols-3">
               <legend className="mb-2 text-[13px] font-semibold">Papel</legend>
-              {(["cs", "admin"] as Papel[]).map((p) => (
+              {(["cs", "mentor", "admin"] as Papel[]).map((p) => (
                 <label
                   key={p}
                   className={`grid cursor-pointer gap-1 rounded-2xl border p-4 transition-colors ${

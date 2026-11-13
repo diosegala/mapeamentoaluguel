@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -250,6 +250,8 @@ function Mercado() {
 
 /** Relatório escrito pela IA para a liderança, com o recorte atual; roda na fila e fica guardado por versão. */
 function RelatoriosLideranca({ filtros, base, n }: { filtros: Filtros; base: string; n: number }) {
+  const { papel } = useRouteContext({ from: "/_authenticated" });
+  const ehAdmin = papel === "admin";
   const listar = useServerFn(listarRelatoriosMercado);
   const gerar = useServerFn(gerarRelatorioMercado);
   const q = useQuery({
@@ -271,22 +273,31 @@ function RelatoriosLideranca({ filtros, base, n }: { filtros: Filtros; base: str
       <div className="flex flex-wrap items-start justify-between gap-4">
         <Titulo
           titulo="Relatório para a liderança"
-          texto="A IA lê os números desta página, as dores, os textos de “Outro” e as prioridades dos relatórios publicados, e escreve uma leitura consolidada com perfis de clientes e oportunidades para a CUPOLA. Usa o recorte atual dos filtros."
+          texto={
+            ehAdmin
+              ? "A IA lê os números desta página, as dores, os textos de “Outro” e as prioridades dos relatórios publicados, e escreve uma leitura consolidada com perfis de clientes e oportunidades para a CUPOLA. Usa o recorte atual dos filtros."
+              : "Leitura consolidada da base de clientes, com perfis e oportunidades. Cada versão indica a base de imobiliárias que entrou na conta."
+          }
         />
-        <Button
-          disabled={mut.isPending || n === 0}
-          onClick={() => {
-            if (
-              window.confirm(
-                `Gerar relatório para a liderança com ${n} imobiliária(s)?\n\nBase: ${base}.`,
+        {ehAdmin && (
+          <Button
+            disabled={mut.isPending || n === 0}
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Gerar relatório para a liderança com ${n} imobiliária(s)?\n\nBase: ${base}.`,
+                )
               )
-            )
-              mut.mutate();
-          }}
-        >
-          {mut.isPending ? "Enviando para a fila..." : "Gerar relatório"}
-        </Button>
+                mut.mutate();
+            }}
+          >
+            {mut.isPending ? "Enviando para a fila..." : "Gerar relatório"}
+          </Button>
+        )}
       </div>
+      {!ehAdmin && q.data && versoes.length === 0 && (
+        <p className="text-sm text-foreground-muted">Nenhum relatório gerado ainda.</p>
+      )}
       {q.error && <p className="text-sm text-destructive">{(q.error as Error).message}</p>}
       {versoes.length > 0 && (
         <ul className="grid gap-2 text-sm">

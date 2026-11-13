@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -10,7 +10,12 @@ import { RelatorioMarkdown } from "@/components/cupola/relatorio-markdown";
 import { RevisaoHumana } from "@/components/cupola/revisao-humana";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { auditarRelatorioIa, detalheDiagnostico, enviarRelatorioPorEmail, regenerarRelatorio } from "@/lib/admin.functions";
+import {
+  auditarRelatorioIa,
+  detalheDiagnostico,
+  enviarRelatorioPorEmail,
+  regenerarRelatorio,
+} from "@/lib/admin.functions";
 import { MODELOS_AUDITORIA, ROTULOS_VEREDITO, revisaoEmMarkdown } from "@/lib/auditoria-modelos";
 import { rotuloStatus } from "@/lib/status-diagnostico";
 import { linkWhatsApp } from "@/lib/telefone";
@@ -27,6 +32,8 @@ function valor(v: unknown) {
 
 function Detalhe() {
   const { id } = Route.useParams();
+  const { papel } = useRouteContext({ from: "/_authenticated" });
+  const ehAdmin = papel === "admin";
   const buscar = useServerFn(detalheDiagnostico);
   const regenerar = useServerFn(regenerarRelatorio);
   const enviarEmail = useServerFn(enviarRelatorioPorEmail);
@@ -56,13 +63,16 @@ function Detalhe() {
   const auditar = useServerFn(auditarRelatorioIa);
   const [modeloAuditoria, setModeloAuditoria] = useState<string>(MODELOS_AUDITORIA[0].id);
   const auditoria = useMutation({
-    mutationFn: (relatorioId: string) => auditar({ data: { id, relatorioId, modelo: modeloAuditoria } }),
+    mutationFn: (relatorioId: string) =>
+      auditar({ data: { id, relatorioId, modelo: modeloAuditoria } }),
     onError: (e) => toast.error((e as Error).message),
   });
 
   const d = q.data?.diagnostico;
-  const link = d && typeof window !== "undefined" ? `${window.location.origin}/relatorio/${d.codigo}` : "";
-  const linkForm = d && typeof window !== "undefined" ? `${window.location.origin}/formulario/${d.codigo}` : "";
+  const link =
+    d && typeof window !== "undefined" ? `${window.location.origin}/relatorio/${d.codigo}` : "";
+  const linkForm =
+    d && typeof window !== "undefined" ? `${window.location.origin}/formulario/${d.codigo}` : "";
   const ultimo = q.data?.relatorios.find((r) => r.status === "concluido");
   // Versão que o cliente vê, e versão gerada aguardando revisão (a mais nova, ainda não publicada).
   const publicado = q.data?.relatorios.find((r) => r.publicado_em);
@@ -74,7 +84,9 @@ function Detalhe() {
     <main className="min-h-screen bg-background">
       <AdminNav />
       <div className="mx-auto max-w-5xl space-y-8 px-6 py-8">
-        <Link to="/admin" className="text-sm text-foreground-muted hover:text-foreground">← Diagnósticos</Link>
+        <Link to="/admin" className="text-sm text-foreground-muted hover:text-foreground">
+          ← Diagnósticos
+        </Link>
         {q.isLoading && <p>Carregando...</p>}
         {q.error && <p className="text-destructive">{(q.error as Error).message}</p>}
         {d && (
@@ -83,41 +95,81 @@ function Detalhe() {
               <div>
                 <h1 className="titulo-marca text-[24px]">{d.nome_imobiliaria}</h1>
                 <p className="text-sm text-foreground-muted">
-                  {d.cidade}/{d.estado} · código <strong className="tracking-[0.15em]">{d.codigo}</strong> · {rotuloStatus(d.status)}
+                  {d.cidade}/{d.estado} · código{" "}
+                  <strong className="tracking-[0.15em]">{d.codigo}</strong> ·{" "}
+                  {rotuloStatus(d.status)}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(linkForm); toast.success("Link do questionário copiado"); }}>
-                  Copiar link do questionário
-                </Button>
-                <Button variant="outline" disabled={!publicado} onClick={() => { navigator.clipboard.writeText(link); toast.success("Link do relatório copiado"); }}>
-                  Copiar link do relatório
-                </Button>
+              {!ehAdmin && (
                 <Button
                   variant="outline"
                   disabled={!publicado}
-                  onClick={() =>
-                    window.open(
-                      linkWhatsApp(d.telefone, `Olá! Seu diagnóstico da operação de locação feito pela CUPOLA está pronto: ${link}`),
-                      "_blank",
-                    )
-                  }
+                  onClick={() => window.open(link, "_blank")}
                 >
-                  Enviar por WhatsApp
-                </Button>
-                <Button variant="outline" disabled={!publicado} onClick={() => window.open(link, "_blank")}>
                   Baixar PDF
                 </Button>
-                <Button variant="outline" disabled={!publicado} onClick={() => setMostrarEmail((v) => !v)}>
-                  Enviar por e-mail
-                </Button>
-                <Button disabled={regen.isPending || Object.keys(respostas).length === 0} onClick={() => regen.mutate()}>
-                  {regen.isPending ? "Enviando para a fila..." : "Gerar nova versão"}
-                </Button>
-              </div>
+              )}
+              {ehAdmin && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(linkForm);
+                      toast.success("Link do questionário copiado");
+                    }}
+                  >
+                    Copiar link do questionário
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!publicado}
+                    onClick={() => {
+                      navigator.clipboard.writeText(link);
+                      toast.success("Link do relatório copiado");
+                    }}
+                  >
+                    Copiar link do relatório
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!publicado}
+                    onClick={() =>
+                      window.open(
+                        linkWhatsApp(
+                          d.telefone,
+                          `Olá! Seu diagnóstico da operação de locação feito pela CUPOLA está pronto: ${link}`,
+                        ),
+                        "_blank",
+                      )
+                    }
+                  >
+                    Enviar por WhatsApp
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!publicado}
+                    onClick={() => window.open(link, "_blank")}
+                  >
+                    Baixar PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!publicado}
+                    onClick={() => setMostrarEmail((v) => !v)}
+                  >
+                    Enviar por e-mail
+                  </Button>
+                  <Button
+                    disabled={regen.isPending || Object.keys(respostas).length === 0}
+                    onClick={() => regen.mutate()}
+                  >
+                    {regen.isPending ? "Enviando para a fila..." : "Gerar nova versão"}
+                  </Button>
+                </div>
+              )}
             </header>
 
-            {mostrarEmail && (
+            {ehAdmin && mostrarEmail && (
               <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
                 <Input
                   type="email"
@@ -126,19 +178,17 @@ function Detalhe() {
                   onChange={(e) => setEmailDestino(e.target.value)}
                   className="max-w-xs"
                 />
-                <Button
-                  disabled={envio.isPending}
-                  onClick={() => envio.mutate()}
-                >
+                <Button disabled={envio.isPending} onClick={() => envio.mutate()}>
                   {envio.isPending ? "Enviando..." : "Enviar relatório"}
                 </Button>
                 <p className="w-full text-xs text-foreground-subtle">
-                  Reenvia a última versão aprovada. Enquanto o domínio da cupola.com.br não estiver verificado no Resend, os envios só chegam ao e-mail do dono da conta Resend.
+                  Reenvia a última versão aprovada. Enquanto o domínio da cupola.com.br não estiver
+                  verificado no Resend, os envios só chegam ao e-mail do dono da conta Resend.
                 </p>
               </section>
             )}
 
-            {pendente?.conteudo && (
+            {ehAdmin && pendente?.conteudo && (
               <RevisaoHumana
                 diagnosticoId={id}
                 versao={pendente}
@@ -150,48 +200,70 @@ function Detalhe() {
               />
             )}
 
-            <section className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="mb-4 text-[18px] font-bold">Versões do relatório</h2>
-              {q.data!.relatorios.length === 0 && <p className="text-sm text-foreground-muted">Nenhum relatório ainda.</p>}
-              <ul className="space-y-2 text-sm">
-                {q.data!.relatorios.map((r) => {
-                  const revisao = q.data!.revisoes.find((a) => a.relatorio_id === r.id);
-                  return (
-                    <li key={r.id} className="space-y-1">
-                      <div className="flex flex-wrap gap-3">
-                        <strong>v{r.versao}</strong>
-                        <span>
-                          {r.publicado_em ? "publicada" : r.status === "concluido" ? "aguardando revisão" : r.status}
-                        </span>
-                        <span className="text-foreground-subtle">{new Date(r.created_at).toLocaleString("pt-BR")}</span>
-                        <span className="text-foreground-subtle">{r.modelo ?? ""}</span>
-                        {r.tokens_entrada != null && <span className="text-foreground-subtle">{r.tokens_entrada} / {r.tokens_saida} tokens</span>}
-                        {r.erro && <span className="text-destructive">{r.erro}</span>}
-                      </div>
-                      {revisao && (
-                        <details className="rounded-2xl bg-background-secondary px-3 py-2">
-                          <summary className="cursor-pointer text-foreground-muted">
-                            Revisão automática: {ROTULOS_VEREDITO[revisao.veredito] ?? revisao.veredito}
-                            {revisao.correcoes_aplicadas > 0 && ` (${revisao.correcoes_aplicadas} correções)`}
-                          </summary>
-                          <div className="mt-2">
-                            <RelatorioMarkdown conteudo={revisaoEmMarkdown(revisao, revisao.correcoes_aplicadas)} />
-                          </div>
-                        </details>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+            {ehAdmin && (
+              <section className="rounded-2xl border border-border bg-card p-6">
+                <h2 className="mb-4 text-[18px] font-bold">Versões do relatório</h2>
+                {q.data!.relatorios.length === 0 && (
+                  <p className="text-sm text-foreground-muted">Nenhum relatório ainda.</p>
+                )}
+                <ul className="space-y-2 text-sm">
+                  {q.data!.relatorios.map((r) => {
+                    const revisao = q.data!.revisoes.find((a) => a.relatorio_id === r.id);
+                    return (
+                      <li key={r.id} className="space-y-1">
+                        <div className="flex flex-wrap gap-3">
+                          <strong>v{r.versao}</strong>
+                          <span>
+                            {r.publicado_em
+                              ? "publicada"
+                              : r.status === "concluido"
+                                ? "aguardando revisão"
+                                : r.status}
+                          </span>
+                          <span className="text-foreground-subtle">
+                            {new Date(r.created_at).toLocaleString("pt-BR")}
+                          </span>
+                          <span className="text-foreground-subtle">{r.modelo ?? ""}</span>
+                          {r.tokens_entrada != null && (
+                            <span className="text-foreground-subtle">
+                              {r.tokens_entrada} / {r.tokens_saida} tokens
+                            </span>
+                          )}
+                          {r.erro && <span className="text-destructive">{r.erro}</span>}
+                        </div>
+                        {revisao && (
+                          <details className="rounded-2xl bg-background-secondary px-3 py-2">
+                            <summary className="cursor-pointer text-foreground-muted">
+                              Revisão automática:{" "}
+                              {ROTULOS_VEREDITO[revisao.veredito] ?? revisao.veredito}
+                              {revisao.correcoes_aplicadas > 0 &&
+                                ` (${revisao.correcoes_aplicadas} correções)`}
+                            </summary>
+                            <div className="mt-2">
+                              <RelatorioMarkdown
+                                conteudo={revisaoEmMarkdown(revisao, revisao.correcoes_aplicadas)}
+                              />
+                            </div>
+                          </details>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
 
-            {ultimo?.conteudo && (
+            {ehAdmin && ultimo?.conteudo && (
               <section className="rounded-2xl border border-border bg-card p-6">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-[18px] font-bold">Revisão de qualidade (v{ultimo.versao})</h2>
+                    <h2 className="text-[18px] font-bold">
+                      Revisão de qualidade (v{ultimo.versao})
+                    </h2>
                     <p className="text-sm text-foreground-muted">
-                      Todo relatório já passa pela revisão automática antes de ser publicado. Aqui é possível rodar o mesmo revisor de novo, com outro modelo, apenas para consulta: o relatório não é alterado.
+                      Todo relatório já passa pela revisão automática antes de ser publicado. Aqui é
+                      possível rodar o mesmo revisor de novo, com outro modelo, apenas para
+                      consulta: o relatório não é alterado.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -203,7 +275,9 @@ function Detalhe() {
                       aria-label="Modelo da revisão"
                     >
                       {MODELOS_AUDITORIA.map((m) => (
-                        <option key={m.id} value={m.id}>{m.rotulo}</option>
+                        <option key={m.id} value={m.id}>
+                          {m.rotulo}
+                        </option>
                       ))}
                     </select>
                     <Button
@@ -211,14 +285,26 @@ function Detalhe() {
                       disabled={auditoria.isPending}
                       onClick={() => auditoria.mutate(ultimo.id)}
                     >
-                      {auditoria.isPending ? "Revisando..." : auditoria.data ? "Revisar novamente" : "Revisar relatório com IA"}
+                      {auditoria.isPending
+                        ? "Revisando..."
+                        : auditoria.data
+                          ? "Revisar novamente"
+                          : "Revisar relatório com IA"}
                     </Button>
                   </div>
                 </div>
-                {auditoria.isPending && <p className="text-sm text-foreground-muted">Analisando, isso pode levar até um minuto...</p>}
-                {auditoria.error && <p className="text-sm text-destructive">{(auditoria.error as Error).message}</p>}
+                {auditoria.isPending && (
+                  <p className="text-sm text-foreground-muted">
+                    Analisando, isso pode levar até um minuto...
+                  </p>
+                )}
+                {auditoria.error && (
+                  <p className="text-sm text-destructive">{(auditoria.error as Error).message}</p>
+                )}
                 {auditoria.data && !auditoria.isPending && (
-                  <div className="mt-4"><RelatorioMarkdown conteudo={auditoria.data.conteudo} /></div>
+                  <div className="mt-4">
+                    <RelatorioMarkdown conteudo={auditoria.data.conteudo} />
+                  </div>
                 )}
               </section>
             )}
@@ -248,15 +334,19 @@ function Detalhe() {
             <section className="rounded-2xl border border-border bg-card p-6">
               <h2 className="mb-4 text-[18px] font-bold">Respostas</h2>
               <dl className="space-y-3 text-sm">
-                {q.data!.perguntas.filter((p) => p.chave in respostas).map((p) => (
-                  <div key={p.chave}>
-                    <dt className="font-semibold">{p.texto}</dt>
-                    <dd className="text-foreground-muted">
-                      {valor(respostas[p.chave])}
-                      {respostas[`${p.chave}__outro`] ? ` (Outro: ${respostas[`${p.chave}__outro`]})` : ""}
-                    </dd>
-                  </div>
-                ))}
+                {q
+                  .data!.perguntas.filter((p) => p.chave in respostas)
+                  .map((p) => (
+                    <div key={p.chave}>
+                      <dt className="font-semibold">{p.texto}</dt>
+                      <dd className="text-foreground-muted">
+                        {valor(respostas[p.chave])}
+                        {respostas[`${p.chave}__outro`]
+                          ? ` (Outro: ${respostas[`${p.chave}__outro`]})`
+                          : ""}
+                      </dd>
+                    </div>
+                  ))}
               </dl>
             </section>
           </>

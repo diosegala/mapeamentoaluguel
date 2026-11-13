@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CampoSenha } from "@/components/cupola/campo-senha";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { inicioDoPapel, papelPrincipal } from "@/lib/papeis";
 
 export const Route = createFileRoute("/redefinir-senha")({
   ssr: false,
@@ -60,8 +61,8 @@ function RedefinirSenha() {
       if (error) throw error;
       toast.success("Senha redefinida.");
       const { data: linhas } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-      const papeis = (linhas ?? []).map((l) => l.role as string);
-      navigate({ to: papeis.includes("admin") ? "/admin" : "/clientes" });
+      const papel = papelPrincipal((linhas ?? []).map((l) => l.role as string));
+      navigate({ to: papel ? inicioDoPapel(papel) : "/auth" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar a senha.");
     } finally {

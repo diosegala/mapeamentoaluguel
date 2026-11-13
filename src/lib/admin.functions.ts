@@ -29,7 +29,8 @@ async function garantirAdmin(supabase: any, userId: string) {
 export const listarDiagnosticos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await garantirAdmin(context.supabase, context.userId);
+    const papel = await garantirPapel(context.supabase, context.userId, ["admin", "mentor"]);
+    if (papel === "mentor") return listarPublicados(context.supabase);
     const { data, error } = await context.supabase
       .from("diagnosticos")
       .select("id, codigo, nome_imobiliaria, cidade, estado, status, created_at, concluido_em")
@@ -38,6 +39,28 @@ export const listarDiagnosticos = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+/**
+ * Para o mentor: só diagnósticos com relatório publicado (a versão que o cliente recebeu).
+ * Lê com a sessão do mentor; o RLS já limita a relatórios publicados e diagnósticos concluídos.
+ */
+async function listarPublicados(supabase: any) {
+  const { data: publicados, error: erroPublicados } = await supabase
+    .from("relatorios")
+    .select("diagnostico_id")
+    .not("publicado_em", "is", null);
+  if (erroPublicados) throw new Error(erroPublicados.message);
+  const ids = [...new Set(((publicados ?? []) as Array<{ diagnostico_id: string }>).map((r) => r.diagnostico_id))];
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from("diagnosticos")
+    .select("id, codigo, nome_imobiliaria, cidade, estado, status, created_at, concluido_em")
+    .in("id", ids)
+    .order("concluido_em", { ascending: false })
+    .limit(500);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
 
 export const criarDiagnostico = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -111,7 +134,8 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    await garantirAdmin(context.supabase, context.userId);
+    const papel = await garantirPapel(context.supabase, context.userId, ["admin", "mentor"]);
+    if (papel === "mentor") return detalheParaMentor(context.supabase, data.id);
     const [{ data: diag, error }, { data: relatorios }, { data: perguntas }, { data: revisoes }] = await Promise.all([
       context.supabase.from("diagnosticos").select("*").eq("id", data.id).single(),
       context.supabase
@@ -139,6 +163,38 @@ export const detalheDiagnostico = createServerFn({ method: "GET" })
       perguntas: (perguntas ?? []) as Array<{ chave: string; texto: string; secao: number }>,
     };
   });
+
+/**
+ * Leitura do mentor: cadastro, respostas e só as versões publicadas do relatório.
+ * Sem rascunhos, texto original da IA, revisões automáticas ou configuração de envio.
+ * Lê com a sessão do mentor (RLS).
+ */
+async function detalheParaMentor(supabase: any, id: string) {
+  const [{ data: diag, error }, { data: relatorios }, { data: perguntas }] = await Promise.all([
+    supabase
+      .from("diagnosticos")
+      .select("id, codigo, nome_imobiliaria, cidade, estado, status, respostas, created_at, concluido_em")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("relatorios")
+      .select("id, versao, status, conteudo, publicado_em, revisado_em, created_at")
+      .eq("diagnostico_id", id)
+      .not("publicado_em", "is", null)
+      .order("versao", { ascending: false }),
+    supabase.from("perguntas_formulario").select("chave, texto, secao, ordem").order("secao").order("ordem"),
+  ]);
+  if (error || !diag || !relatorios?.length) throw new Error("Diagnóstico não encontrado.");
+  const { numerosDestaque } = await import("./indicadores-operacao");
+  return {
+    envioAutomatico: false,
+    diagnostico: diag as any,
+    numeros: numerosDestaque(((diag as any).respostas ?? {}) as Record<string, unknown>),
+    relatorios: relatorios as any[],
+    revisoes: [] as any[],
+    perguntas: (perguntas ?? []) as Array<{ chave: string; texto: string; secao: number }>,
+  };
+}
 
 export const auditarRelatorioIa = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

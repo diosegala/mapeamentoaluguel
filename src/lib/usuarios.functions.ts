@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { garantirPapel, type Papel } from "@/lib/papeis";
+import { garantirPapel, papelPrincipal, type Papel } from "@/lib/papeis";
 
 /** Usuários com acesso ao painel e o papel de cada um. Só administradores. */
 export const listarUsuarios = createServerFn({ method: "GET" })
@@ -22,7 +22,8 @@ export const listarUsuarios = createServerFn({ method: "GET" })
     const porUsuario = new Map<string, { papel: Papel; criado_em: string }>();
     for (const p of (papeis ?? []) as Array<{ user_id: string; role: Papel; created_at: string }>) {
       const atual = porUsuario.get(p.user_id);
-      if (!atual || p.role === "admin") porUsuario.set(p.user_id, { papel: p.role, criado_em: p.created_at });
+      const papel = papelPrincipal(atual ? [atual.papel, p.role] : [p.role]) ?? p.role;
+      if (!atual || papel !== atual.papel) porUsuario.set(p.user_id, { papel, criado_em: p.created_at });
     }
     return [...porUsuario.entries()]
       .map(([user_id, { papel, criado_em }]) => {
@@ -50,7 +51,7 @@ export const criarUsuario = createServerFn({ method: "POST" })
       .object({
         email: z.string().trim().email("E-mail inválido.").max(200),
         senha: z.string().min(8, "A senha precisa ter ao menos 8 caracteres.").max(200),
-        papel: z.enum(["admin", "cs"]),
+        papel: z.enum(["admin", "cs", "mentor"]),
       })
       .parse(data),
   )
